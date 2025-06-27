@@ -19,6 +19,16 @@ const Navigation = () => {
 
   const fileRoute = '/files';
   const projectRoute = '/projects';
+  const subprojectRoute = '/subprojects';
+  const revisionRoute = '/revisions';
+
+  const routes = [
+    { path: projectRoute, label: 'Проекты' },
+    { path: subprojectRoute, label: 'Подпроекты' },
+    { path: revisionRoute, label: 'Ревизии' },
+    { path: fileRoute, label: 'Файлы' },
+  ];
+
 
   return (
     <Box
@@ -45,32 +55,23 @@ const Navigation = () => {
 
       {/* Navigation Items */}
       <Box sx={{ flex: 1, p: 2 }}>
-        <Button
-          variant={isActiveRoute(projectRoute) ? 'solid' : 'plain'}
-          color={isActiveRoute(projectRoute) ? 'primary' : 'neutral'}
-          onClick={() => navigate(projectRoute)}
-          sx={{
-            width: '100%',
-            justifyContent: 'flex-start',
-            mb: 1,
-            textAlign: 'left',
-          }}
-        >
-          Проекты
-        </Button>
-        <Button
-          variant={isActiveRoute(fileRoute) ? 'solid' : 'plain'}
-          color={isActiveRoute(fileRoute) ? 'primary' : 'neutral'}
-          onClick={() => navigate(fileRoute)}
-          sx={{
-            width: '100%',
-            justifyContent: 'flex-start',
-            mb: 1,
-            textAlign: 'left',
-          }}
-        >
-          Файлы
-        </Button>
+        {routes.map(({path, label}) => {
+          return (
+            <Button
+              variant={isActiveRoute(path) ? 'solid' : 'plain'}
+              color={isActiveRoute(path) ? 'primary' : 'neutral'}
+              onClick={() => navigate(path)}
+              sx={{
+                width: '100%',
+                justifyContent: 'flex-start',
+                mb: 1,
+                textAlign: 'left',
+              }}
+            >
+              {label}
+            </Button>
+          )
+        })}
       </Box>
 
       {/* User Section */}
