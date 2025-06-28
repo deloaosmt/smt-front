@@ -1,23 +1,94 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Box, 
-  Button, 
-  Container, 
-  DialogContent, 
-  DialogTitle, 
-  FormControl, 
-  FormLabel, 
-  Grid, 
-  Input, 
-  Modal, 
-  ModalDialog, 
-  Stack, 
+import {
+  Box,
+  Button,
+  Container,
+  DialogContent,
+  DialogTitle,
+  FormControl,
+  FormLabel,
+  Grid,
+  Input,
+  Modal,
+  ModalDialog,
+  Stack,
   Typography,
   Breadcrumbs,
-  Link
+  Link,
+  Select,
+  Option,
+  IconButton
 } from '@mui/joy';
 import { useNavigate } from 'react-router';
+import SearchIcon from '@mui/icons-material/Search';
 import Pagination from './Pagination';
+import CloseRounded from '@mui/icons-material/CloseRounded';
+
+interface SearchProps {
+  searchOptions: Array<{ label: string, values: string[] }>
+  onChange: (searchFields: Array<string | null>) => void
+  initialValues?: Array<string | null>
+}
+
+function SearchBar(searchConfig: SearchProps) {
+  const [searchFields, setSearchFields] = useState<Array<string | null>>(
+    searchConfig.initialValues || []
+  );
+
+  // Update search fields when initialValues change
+  useEffect(() => {
+    if (searchConfig.initialValues) {
+      setSearchFields(searchConfig.initialValues);
+    }
+  }, [searchConfig.initialValues]);
+
+  const handleSearchChange = (index: number, value: string | null) => {
+    const newSearchFields = [...searchFields];
+    newSearchFields[index] = value;
+    setSearchFields(newSearchFields);
+    searchConfig.onChange(newSearchFields);
+  };
+
+  return (
+    <Stack direction="row" spacing={2} alignItems="center">
+      <SearchIcon />
+      {searchConfig.searchOptions.map((option, index) => (
+        <Select
+          key={option.label}
+          placeholder={option.label}
+          value={searchFields[index] || ''}
+          onChange={(_, value) => handleSearchChange(index, value as string | null)}
+          sx={{ minWidth: 150 }}
+          {...(searchFields[index] && {
+            // display the button and remove select indicator
+            // when user has selected a value
+            endDecorator: (
+              <IconButton
+                size="sm"
+                variant="plain"
+                color="neutral"
+                onMouseDown={(event) => {
+                  // don't open the popup when clicking on this button
+                  event.stopPropagation();
+                }}
+                onClick={() => handleSearchChange(index, null)}
+              >
+                <CloseRounded />
+              </IconButton>
+            ),
+            indicator: null,
+          })}
+        >
+          {option.values.map((value) => (
+            <Option key={value} value={value}>
+              {value}
+            </Option>
+          ))}
+        </Select>
+      ))}
+    </Stack>
+  );
+}
 
 interface DataGridProps<T> {
   title: string;
@@ -41,6 +112,7 @@ interface DataGridProps<T> {
   }>;
   filterFunction?: (items: T[], filterParams: Record<string, unknown>) => T[];
   filterParams?: Record<string, unknown>;
+  searchConfig?: SearchProps;
 }
 
 const DataGrid = <T extends { id: string | number }>({
@@ -58,25 +130,70 @@ const DataGrid = <T extends { id: string | number }>({
   breadcrumbs = [],
   filterFunction,
   filterParams = {},
+  searchConfig,
 }: DataGridProps<T>) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [formData, setFormData] = useState<Record<string, string>>({});
+  const [searchFields, setSearchFields] = useState<Array<string | null>>([]);
   const navigate = useNavigate();
 
   // Apply filtering if filterFunction is provided
   const filteredItems = filterFunction ? filterFunction(items, filterParams) : items;
 
+  // Apply search filtering based on selected search fields
+  const searchFilteredItems = searchConfig && searchFields.some(field => field !== null) ?
+    filteredItems.filter(item => {
+      return searchFields.every((searchValue, index) => {
+        if (!searchValue) return true; // Skip empty search fields
+
+        const searchOption = searchConfig.searchOptions[index];
+        if (!searchOption) return true;
+
+        // Map search option labels to actual item fields
+        let itemValue: unknown;
+        switch (searchOption.label.toLowerCase()) {
+          case 'document type':
+          case 'тип документа': {
+            itemValue = (item as Record<string, unknown>).documentType;
+            break;
+          }
+          case 'project':
+          case 'проект': {
+            itemValue = (item as Record<string, unknown>).projectId;
+            break;
+          }
+          case 'subproject':
+          case 'подпроект': {
+            itemValue = (item as Record<string, unknown>).subprojectId;
+            break;
+          }
+          case 'revision':
+          case 'ревизия': {
+            itemValue = (item as Record<string, unknown>).revisionId;
+            break;
+          }
+          default: {
+            // Try to find the field by converting label to camelCase
+            const fieldName = searchOption.label.toLowerCase().replace(/\s+/g, '');
+            itemValue = (item as Record<string, unknown>)[fieldName];
+          }
+        }
+
+        return itemValue && itemValue.toString().toLowerCase() === searchValue.toLowerCase();
+      });
+    }) : filteredItems;
+
   // Reset to first page when items change
   useEffect(() => {
     setCurrentPage(1);
-  }, [filteredItems.length]);
+  }, [searchFilteredItems.length]);
 
   // Calculate pagination
-  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+  const totalPages = Math.ceil(searchFilteredItems.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentItems = filteredItems.slice(startIndex, endIndex);
+  const currentItems = searchFilteredItems.slice(startIndex, endIndex);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -96,6 +213,10 @@ const DataGrid = <T extends { id: string | number }>({
       ...prev,
       [fieldName]: value
     }));
+  };
+
+  const handleSearchChange = (newSearchFields: Array<string | null>) => {
+    setSearchFields(newSearchFields);
   };
 
   const createModal = (
@@ -143,7 +264,7 @@ const DataGrid = <T extends { id: string | number }>({
                         navigate(crumb.path);
                       }
                     }}
-                    sx={{ 
+                    sx={{
                       textDecoration: 'none',
                       cursor: crumb.path ? 'pointer' : 'default'
                     }}
@@ -170,6 +291,19 @@ const DataGrid = <T extends { id: string | number }>({
                 {createButtonText}
               </Button>
             </Box>
+
+            {/* Search Bar */}
+            <Box sx={{ mb: 3 }}>
+              {searchConfig && (
+                <SearchBar
+                  searchOptions={searchConfig.searchOptions}
+                  onChange={handleSearchChange}
+                  initialValues={searchConfig.initialValues}
+                />
+              )}
+            </Box>
+
+            {/* Create Modal */}
             {createModal}
           </Box>
 
@@ -183,7 +317,7 @@ const DataGrid = <T extends { id: string | number }>({
           </Grid>
 
           {/* Empty state (if no items) */}
-          {filteredItems.length === 0 && (
+          {searchFilteredItems.length === 0 && (
             <Box
               sx={{
                 textAlign: 'center',
@@ -192,21 +326,24 @@ const DataGrid = <T extends { id: string | number }>({
               }}
             >
               <Typography level="h4" sx={{ mb: 2 }}>
-                {emptyStateTitle}
+                {searchFields.some(field => field !== null) ? 'No results found' : emptyStateTitle}
               </Typography>
               <Typography level="body-md" sx={{ mb: 3 }}>
-                {emptyStateDescription}
+                {searchFields.some(field => field !== null)
+                  ? `No items match your selected filters`
+                  : emptyStateDescription
+                }
               </Typography>
             </Box>
           )}
 
           {/* Pagination */}
-          {filteredItems.length > 0 && (
+          {searchFilteredItems.length > 0 && (
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
               onPageChange={handlePageChange}
-              totalItems={filteredItems.length}
+              totalItems={searchFilteredItems.length}
               itemsPerPage={itemsPerPage}
             />
           )}

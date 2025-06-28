@@ -55,7 +55,6 @@ const SubprojectsPage = () => {
         renderCard={(subproject) => (
           <DataCard 
             item={subproject} 
-            onClick={() => handleSubprojectClick(subproject)}
             onForwardClick={() => handleSubprojectClick(subproject)}
           />
         )}

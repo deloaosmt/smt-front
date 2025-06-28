@@ -84,12 +84,32 @@ const DataCard: React.FC<DataCardProps> = ({
           transform: 'translateY(-2px)',
           boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
         } : {},
+        height: '200px', // Fixed height for all cards
+        minWidth: '400px',
+        maxWidth: '500px',
+        display: 'flex',
+        flexDirection: 'column',
       }}
       onClick={onClick}
     >
-      <CardContent>
+      <CardContent sx={{ 
+        height: '100%', 
+        display: 'flex', 
+        flexDirection: 'column',
+        p: 2
+      }}>
         <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <Typography level="h4" sx={{ fontWeight: 'bold', flex: 1 }}>
+          <Typography 
+            level="h4" 
+            sx={{ 
+              fontWeight: 'bold', 
+              flex: 1,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              maxWidth: '70%' // Leave space for chip
+            }}
+          >
             {title}
           </Typography>
           {(showChip || chipTextToShow) && (
@@ -97,28 +117,71 @@ const DataCard: React.FC<DataCardProps> = ({
               size="sm"
               variant="soft"
               color={chipColor}
-              sx={{ ml: 1 }}
+              sx={{ ml: 1, flexShrink: 0 }}
             >
               {chipTextToShow}
             </Chip>
           )}
         </Box>
 
-        <Typography level="body-md" sx={{ mb: 2, color: 'text.secondary' }}>
+        <Typography 
+          level="body-md" 
+          sx={{ 
+            mb: 2, 
+            color: 'text.secondary',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            lineHeight: '1.4',
+            flex: 1 // Take remaining space
+          }}
+        >
           {description}
         </Typography>
 
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography level="body-sm" sx={{ color: 'text.tertiary' }}>
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          mt: 'auto' // Push to bottom
+        }}>
+          <Typography 
+            level="body-sm" 
+            sx={{ 
+              color: 'text.tertiary',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              maxWidth: '60%'
+            }}
+          >
             {additionalInfo || `Создано: ${createdDate}`}
           </Typography>
           {updatedDate && updatedDate !== createdDate && (
-            <Typography level="body-sm" sx={{ color: 'text.tertiary' }}>
+            <Typography 
+              level="body-sm" 
+              sx={{ 
+                color: 'text.tertiary',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                maxWidth: '30%'
+              }}
+            >
               Обновлено: {updatedDate}
             </Typography>
           )}
           {onForwardClick && (
-            <Button variant="outlined" color="neutral" size="sm" endDecorator={<KeyboardArrowRight />} onClick={onForwardClick}>
+            <Button 
+              variant="outlined" 
+              color="neutral" 
+              size="sm" 
+              endDecorator={<KeyboardArrowRight />} 
+              onClick={onForwardClick}
+              sx={{ flexShrink: 0, ml: 1 }}
+            >
               Перейти
             </Button>
           )}

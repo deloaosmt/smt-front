@@ -1,5 +1,5 @@
 import React from 'react';
-import { useParams } from 'react-router';
+import { useParams, useNavigate } from 'react-router';
 import Navigation from '../components/Navigation';
 import DataGrid from '../components/DataGrid';
 import DataCard from '../components/DataCard';
@@ -10,10 +10,27 @@ import type { Revision } from '../types/revision';
 
 const RevisionsPage = () => {
   const { subprojectId } = useParams<{ subprojectId?: string }>();
+  const navigate = useNavigate();
 
   const handleRevisionClick = (revision: Revision) => {
     console.log('Revision clicked:', revision.id);
-    // You can add navigation to revision details here
+    
+    // Get the subproject and project information
+    const subproject = mockSubprojects.find(s => s.id === revision.subprojectId);
+    if (!subproject) {
+      console.error('Subproject not found for revision:', revision.id);
+      return;
+    }
+    
+    const project = mockProjects.find(p => p.id === subproject.projectId);
+    if (!project) {
+      console.error('Project not found for subproject:', subproject.id);
+      return;
+    }
+    
+    // Navigate to Files page with the selected parameters
+    const filesUrl = `/files?projectId=${project.id}&subprojectId=${subproject.id}&revisionId=${revision.id}`;
+    navigate(filesUrl);
   };
 
   const handleCreateRevision = (formData: Record<string, string>) => {
@@ -60,7 +77,6 @@ const RevisionsPage = () => {
         renderCard={(revision) => (
           <DataCard 
             item={revision} 
-            onClick={() => handleRevisionClick(revision)} 
             onForwardClick={() => handleRevisionClick(revision)}
             showChip={true}
             chipColor="success"

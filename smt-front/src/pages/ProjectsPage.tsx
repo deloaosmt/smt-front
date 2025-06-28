@@ -29,7 +29,6 @@ const ProjectsPage = () => {
         renderCard={(project) => (
           <DataCard 
             item={project} 
-            onClick={() => handleProjectClick(project)}
             onForwardClick={() => handleProjectClick(project)}
           />
         )}

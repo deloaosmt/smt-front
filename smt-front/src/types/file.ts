@@ -10,8 +10,8 @@ export interface File {
   documentType?: string;
   createdAt: string;
   updatedAt: string;
-  projectId?: number;
-  subprojectId?: number;
+  projectId?: string;
+  subprojectId?: string;
   revisionId?: number;
 }
 
