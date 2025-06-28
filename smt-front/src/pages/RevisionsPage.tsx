@@ -1,28 +1,37 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import Navigation from '../components/Navigation';
 import DataGrid from '../components/DataGrid';
 import DataCard from '../components/DataCard';
-import { mockRevisions } from '../data/mockRevisions';
-import { mockSubprojects } from '../data/mockSubprojects';
-import { mockProjects } from '../data/mockProjects';
 import type { Revision } from '../types/revision';
+import type { Subproject } from '../types/subpoject';
+import type { Project } from '../types/project';
+import { revisionService, subprojectService, projectService } from '../api/Services';
 
 const RevisionsPage = () => {
   const { subprojectId } = useParams<{ subprojectId?: string }>();
   const navigate = useNavigate();
+  const [revisions, setRevisions] = useState<Revision[]>([]);
+  const [subprojects, setSubprojects] = useState<Subproject[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+
+  useEffect(() => {
+    revisionService.getItems().then(setRevisions);
+    subprojectService.getItems().then(setSubprojects);
+    projectService.getItems().then(setProjects);
+  }, []);
 
   const handleRevisionClick = (revision: Revision) => {
     console.log('Revision clicked:', revision.id);
     
     // Get the subproject and project information
-    const subproject = mockSubprojects.find(s => s.id === revision.subprojectId);
+    const subproject = subprojects.find(s => s.id === revision.subprojectId);
     if (!subproject) {
       console.error('Subproject not found for revision:', revision.id);
       return;
     }
     
-    const project = mockProjects.find(p => p.id === subproject.projectId);
+    const project = projects.find(p => p.id === subproject.projectId);
     if (!project) {
       console.error('Project not found for subproject:', subproject.id);
       return;
@@ -33,9 +42,23 @@ const RevisionsPage = () => {
     navigate(filesUrl);
   };
 
-  const handleCreateRevision = (formData: Record<string, string>) => {
+  const handleCreateRevision = async (formData: Record<string, string>) => {
     console.log('Creating revision with data:', formData);
-    // You can add API call to create revision here
+    try {
+      const newRevision = await revisionService.createItem({
+        revisionNumber: parseInt(formData.revisionNumber),
+        projectId: parseInt(formData.projectId),
+        subprojectId: subprojectId || '',
+        title: formData.title,
+        description: formData.description
+      });
+      console.log('Revision created:', newRevision);
+      // Refresh the revisions list
+      const updatedRevisions = await revisionService.getItems();
+      setRevisions(updatedRevisions);
+    } catch (error) {
+      console.error('Error creating revision:', error);
+    }
   };
 
   // Filter revisions by subproject if subprojectId is provided
@@ -47,33 +70,15 @@ const RevisionsPage = () => {
     return revisions.filter(revision => revision.subprojectId === subprojectId);
   };
 
-  // Get subproject and project information for breadcrumbs
-  const getSubprojectInfo = () => {
-    if (!subprojectId) return { subproject: null, project: null };
-    const subproject = mockSubprojects.find(s => s.id === subprojectId);
-    if (!subproject) return { subproject: null, project: null };
-    
-    const project = mockProjects.find(p => p.id === subproject.projectId);
-    return { subproject, project };
-  };
-
   // Determine title and breadcrumbs based on context
-  const { subproject, project } = getSubprojectInfo();
-  const title = subprojectId ? `Ревизии подпроекта "${subproject?.title || 'Unknown'}"` : 'Ревизии';
+  const title = subprojectId ? `Ревизии подпроекта "${subprojectService.getItem(subprojectId).then(subproject => subproject.title)}"` : 'Ревизии';
   
-  const breadcrumbs = subprojectId && subproject && project ? [
-    { label: 'Проекты', path: '/projects' },
-    { label: project.title, path: `/projects/${project.id}/subprojects` },
-    { label: subproject.title, path: `/subprojects/${subproject.id}` },
-    { label: 'Ревизии' }
-  ] : [];
-
   return (
     <>
       <Navigation />
       <DataGrid<Revision>
         title={title}
-        items={mockRevisions}
+        items={revisions}
         renderCard={(revision) => (
           <DataCard 
             item={revision} 
@@ -97,7 +102,6 @@ const RevisionsPage = () => {
           ? "В этом подпроекте пока нет ревизий" 
           : "Создайте свою первую ревизию для начала"
         }
-        breadcrumbs={breadcrumbs}
         filterFunction={subprojectId ? filterRevisionsBySubproject : undefined}
         filterParams={subprojectId ? { subprojectId } : {}}
       />

@@ -3,21 +3,42 @@ import { useSearchParams } from 'react-router';
 import Navigation from '../components/Navigation';
 import DataGrid from '../components/DataGrid';
 import DataCard from '../components/DataCard';
-import { mockFiles } from '../data/mockFiles';
 import type { File } from '../types/file';
+import { fileService } from '../api/Services';
 
 const FilesPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [initialSearchFields, setInitialSearchFields] = useState<Array<string | null>>([]);
+  const [files, setFiles] = useState<File[]>([]);
+
+  useEffect(() => {
+    fileService.getItems().then(setFiles);
+  }, []);
 
   const handleFileClick = (file: File) => {
     console.log('File clicked:', file.id);
     // You can add navigation to file details here
   };
 
-  const handleCreateFile = (formData: Record<string, string>) => {
+  const handleCreateFile = async (formData: Record<string, string>) => {
     console.log('Creating file with data:', formData);
-    // You can add API call to create file here
+    try {
+      const newFile = await fileService.createItem({
+        originalFilename: formData.displayName,
+        displayName: formData.displayName,
+        mimeType: 'application/pdf',
+        fileSize: 0,
+        s3Key: `files/${formData.displayName}`,
+        s3Bucket: 'construction-docs',
+        documentType: 'document'
+      });
+      console.log('File created:', newFile);
+      // Refresh the files list
+      const updatedFiles = await fileService.getItems();
+      setFiles(updatedFiles);
+    } catch (error) {
+      console.error('Error creating file:', error);
+    }
   };
 
   // Handle URL parameters and set initial search fields
@@ -69,7 +90,7 @@ const FilesPage = () => {
       <Navigation />
       <DataGrid<File>
         title="Файлы"
-        items={mockFiles}
+        items={files}
         renderCard={(file) => (
           <DataCard 
             item={file} 

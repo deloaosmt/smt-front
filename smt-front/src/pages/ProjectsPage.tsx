@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import Navigation from '../components/Navigation';
 import DataGrid from '../components/DataGrid';
 import DataCard from '../components/DataCard';
-import { mockProjects } from '../data/mockProjects';
 import type { Project } from '../types/project';
+import { projectService } from '../api/Services';
 
 const ProjectsPage = () => {
   const navigate = useNavigate();
@@ -15,20 +15,37 @@ const ProjectsPage = () => {
     navigate(`/projects/${project.id}/subprojects`);
   };
 
-  const handleCreateProject = (formData: Record<string, string>) => {
+  const handleCreateProject = async (formData: Record<string, string>) => {
     console.log('Creating project with data:', formData);
-    // You can add API call to create project here
+    try {
+      const newProject = await projectService.createItem({
+        title: formData.title,
+        description: formData.description
+      });
+      console.log('Project created:', newProject);
+      // Refresh the projects list
+      const updatedProjects = await projectService.getItems();
+      setProjects(updatedProjects);
+    } catch (error) {
+      console.error('Error creating project:', error);
+    }
   };
+
+  const [projects, setProjects] = useState<Project[]>([]);
+
+  useEffect(() => {
+    projectService.getItems().then(setProjects);
+  }, []);
 
   return (
     <>
       <Navigation />
       <DataGrid<Project>
         title="Проекты"
-        items={mockProjects}
+        items={projects}
         renderCard={(project) => (
-          <DataCard 
-            item={project} 
+          <DataCard
+            item={project}
             onForwardClick={() => handleProjectClick(project)}
           />
         )}

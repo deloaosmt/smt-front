@@ -13,4 +13,14 @@ export const DefaultService = {
         console.log("Mock registration with data:", userData);
         return Promise.resolve({ success: true });
     }
-}; 
+};
+
+// Export CRUD services
+export {
+    projectService,
+    subprojectService,
+    revisionService,
+    fileService,
+    resetMockData,
+    getMockDataStats
+} from './Services';
