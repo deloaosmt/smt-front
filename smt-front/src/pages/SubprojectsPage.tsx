@@ -6,20 +6,43 @@ import DataCard from '../components/DataCard';
 import type { Subproject } from '../types/subpoject';
 import type { Project } from '../types/project';
 import { projectService, subprojectService } from '../api/Services';
+import { CircularLoader } from '../components/CircularLoader';
 
 const SubprojectsPage = () => {
   const navigate = useNavigate();
   const { projectId } = useParams<{ projectId?: string }>();
   const [subprojects, setSubprojects] = useState<Subproject[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    subprojectService.getItems().then(
-      (subprojects) => {
-        setSubprojects(subprojects.filter(subproject => subproject.projectId === projectId || !projectId));
+    const loadData = async () => {
+      try {
+        if (projectId) {
+          // Load subprojects for specific project
+          const projectSubprojects = await subprojectService.getSubprojectsByProject(parseInt(projectId));
+          setSubprojects(projectSubprojects);
+          
+          // Load project info
+          const project = await projectService.getItem(projectId);
+          setProjects([project]);
+        } else {
+          // Load all subprojects
+          const allSubprojects = await subprojectService.getItems();
+          setSubprojects(allSubprojects);
+          
+          // Load all projects for reference
+          const allProjects = await projectService.getItems();
+          setProjects(allProjects);
+        }
+      } catch (error) {
+        console.error('Error loading data:', error);
+      } finally {
+        setIsLoading(false);
       }
-    );
-    projectService.getItems().then(setProjects);
+    };
+    
+    loadData();
   }, [projectId]);
 
   const handleSubprojectClick = (subproject: Subproject) => {
@@ -31,15 +54,19 @@ const SubprojectsPage = () => {
   const handleCreateSubproject = async (formData: Record<string, string>) => {
     console.log('Creating subproject with data:', formData);
     try {
+      if (!projectId) {
+        throw new Error('Project ID is required to create a subproject');
+      }
+      
       const newSubproject = await subprojectService.createItem({
         title: formData.title,
-        description: formData.description,
-        projectId: projectId || ''
+        description: formData.description || null,
+        project_id: parseInt(projectId)
       });
       console.log('Subproject created:', newSubproject);
       // Refresh the subprojects list
-      const updatedSubprojects = await subprojectService.getItems();
-      setSubprojects(updatedSubprojects.filter(subproject => subproject.projectId === projectId || !projectId));
+      const updatedSubprojects = await subprojectService.getSubprojectsByProject(parseInt(projectId));
+      setSubprojects(updatedSubprojects);
     } catch (error) {
       console.error('Error creating subproject:', error);
     }
@@ -50,45 +77,48 @@ const SubprojectsPage = () => {
     const projectId = params.projectId as string;
     if (!projectId) return subprojects;
 
-    // Filter by actual projectId relationship
-    return subprojects.filter(subproject => subproject.projectId === projectId);
+    // Filter by actual project_id relationship
+    return subprojects.filter(subproject => subproject.project_id.toString() === projectId);
   };
 
   // Get project title for the page title
   const getProjectTitle = () => {
     if (!projectId) return '';
-    const project = projects.find(p => p.id === projectId);
+    const project = projects.find(p => p.id.toString() === projectId);
     return project?.title || '';
   };
 
   return (
     <>
       <Navigation />
-      <DataGrid<Subproject>
-        title={projectId ? `Подпроекты проекта "${getProjectTitle()}"` : 'Подпроекты'}
-        items={subprojects}
-        renderCard={(subproject) => (
-          <DataCard
-            item={subproject}
-            onForwardClick={() => handleSubprojectClick(subproject)}
-          />
-        )}
-        onCreateItem={handleCreateSubproject}
-        createModalTitle="Создать подпроект"
-        createModalDescription="Заполните информацию о подпроекте."
-        createButtonText="Создать подпроект"
-        formFields={[
-          { name: 'title', label: 'Название подпроекта', required: true },
-          { name: 'description', label: 'Описание подпроекта', required: true }
-        ]}
-        emptyStateTitle="Нет подпроектов"
-        emptyStateDescription={projectId
-          ? "В этом проекте пока нет подпроектов"
-          : "Создайте свой первый подпроект для начала"
-        }
-        filterFunction={projectId ? filterSubprojectsByProject : undefined}
-        filterParams={projectId ? { projectId } : {}}
-      />
+      {isLoading && <CircularLoader />}
+      {!isLoading &&
+        <DataGrid<Subproject>
+          title={projectId ? `Подпроекты проекта "${getProjectTitle()}"` : 'Подпроекты'}
+          items={subprojects}
+          renderCard={(subproject) => (
+            <DataCard
+              item={subproject}
+              onForwardClick={() => handleSubprojectClick(subproject)}
+            />
+          )}
+          onCreateItem={handleCreateSubproject}
+          createModalTitle="Создать подпроект"
+          createModalDescription="Заполните информацию о подпроекте."
+          createButtonText="Создать подпроект"
+          formFields={[
+            { name: 'title', label: 'Название подпроекта', required: true },
+            { name: 'description', label: 'Описание подпроекта', required: false }
+          ]}
+          emptyStateTitle="Нет подпроектов"
+          emptyStateDescription={projectId
+            ? "В этом проекте пока нет подпроектов"
+            : "Создайте свой первый подпроект для начала"
+          }
+          filterFunction={projectId ? filterSubprojectsByProject : undefined}
+          filterParams={projectId ? { projectId } : {}}
+        />
+      }
     </>
   );
 };

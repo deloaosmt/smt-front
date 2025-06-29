@@ -1,12 +1,35 @@
-import type { Project } from "../types/project"
-import type { Revision } from "../types/revision"
-import type { Subproject } from "../types/subpoject"
-import type { File } from "../types/file"
-import { mockProjects } from "../data/mockProjects"
-import { mockSubprojects } from "../data/mockSubprojects"
-import { mockRevisions } from "../data/mockRevisions"
-import { mockFiles } from "../data/mockFiles"
+import type { Project, ProjectCreate, ProjectUpdate, ProjectResponse, ProjectListResponse } from "../types/project"
+import type { Revision, RevisionCreate, RevisionUpdate, RevisionResponse, RevisionListResponse } from "../types/revision"
+import type { Subproject, SubprojectCreate, SubprojectUpdate, SubprojectResponse, SubprojectListResponse } from "../types/subpoject"
+import type { File, FileUpload, FileResponse, FileListResponse, DownloadUrlResponse } from "../types/file"
 
+// API Configuration
+const API_BASE_URL = 'http://localhost:5000';
+
+// Helper function to get auth token
+const getAuthToken = (): string | null => {
+  return localStorage.getItem('authToken');
+};
+
+// Helper function to handle API responses
+const handleResponse = async <T>(response: Response): Promise<T> => {
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+  }
+  return response.json();
+};
+
+// Helper function to create headers
+const createHeaders = (): HeadersInit => {
+  const token = getAuthToken();
+  return {
+    'Content-Type': 'application/json',
+    ...(token && { 'Authorization': `Bearer ${token}` })
+  };
+};
+
+// Base CRUD Service Interface
 interface CrudService<T> {
     getItems(): Promise<T[]>
     getItem(id: string): Promise<T>
@@ -14,277 +37,271 @@ interface CrudService<T> {
     deleteItem(id: string): Promise<void>
 }
 
-interface ProjectService extends CrudService<Project> {
-    createItem(item: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>): Promise<Project>
-}
-
-interface SubprojectService extends CrudService<Subproject> {
-    createItem(item: Omit<Subproject, 'id' | 'createdAt' | 'updatedAt'>): Promise<Subproject>
-}
-
-interface RevisionService extends CrudService<Revision> {
-    createItem(item: Omit<Revision, 'id' | 'createdAt'>): Promise<Revision>
-}
-
-interface FileService extends CrudService<File> {
-    createItem(item: Omit<File, 'id' | 'uuid' | 'createdAt' | 'updatedAt'>): Promise<File>
-}
-
-// In-memory data stores (initialized with mock data)
-let projectsData: Project[] = [...mockProjects]
-let subprojectsData: Subproject[] = [...mockSubprojects]
-let revisionsData: Revision[] = [...mockRevisions]
-let filesData: File[] = [...mockFiles]
-
-// Helper function to generate unique IDs
-const generateId = (): string => {
-    return Date.now().toString() + Math.random().toString(36).substr(2, 9)
-}
-
-// Helper function to generate unique numeric IDs
-const generateNumericId = (): number => {
-    return Date.now() + Math.floor(Math.random() * 1000)
-}
-
-// Mock Project Service Implementation
-class MockProjectService implements ProjectService {
+// Project Service Implementation
+class ApiProjectService implements CrudService<Project> {
     async getItems(): Promise<Project[]> {
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 100))
-        return [...projectsData]
+        const response = await fetch(`${API_BASE_URL}/api/projects`, {
+            headers: createHeaders()
+        });
+        const data: ProjectListResponse = await handleResponse(response);
+        return data.projects;
     }
 
     async getItem(id: string): Promise<Project> {
-        await new Promise(resolve => setTimeout(resolve, 100))
-        const project = projectsData.find(p => p.id === id)
-        if (!project) {
-            throw new Error(`Project with id ${id} not found`)
-        }
-        return project
+        const response = await fetch(`${API_BASE_URL}/api/projects/${id}`, {
+            headers: createHeaders()
+        });
+        const data: ProjectResponse = await handleResponse(response);
+        return data.project;
     }
 
-    async createItem(item: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>): Promise<Project> {
-        await new Promise(resolve => setTimeout(resolve, 200))
-        const now = new Date().toISOString().split('T')[0]
-        const newProject: Project = {
-            ...item,
-            id: generateId(),
-            createdAt: now,
-            updatedAt: now
-        }
-        projectsData.push(newProject)
-        return newProject
+    async createItem(item: ProjectCreate): Promise<Project> {
+        const response = await fetch(`${API_BASE_URL}/api/projects/create`, {
+            method: 'POST',
+            headers: createHeaders(),
+            body: JSON.stringify(item)
+        });
+        const data: ProjectResponse = await handleResponse(response);
+        return data.project;
     }
 
     async updateItem(item: Project): Promise<Project> {
-        await new Promise(resolve => setTimeout(resolve, 200))
-        const index = projectsData.findIndex(p => p.id === item.id)
-        if (index === -1) {
-            throw new Error(`Project with id ${item.id} not found`)
-        }
-        const updatedProject: Project = {
-            ...item,
-            updatedAt: new Date().toISOString().split('T')[0]
-        }
-        projectsData[index] = updatedProject
-        return updatedProject
+        const updateData: ProjectUpdate = {
+            title: item.title,
+            description: item.description
+        };
+        const response = await fetch(`${API_BASE_URL}/api/projects/${item.id}`, {
+            method: 'PUT',
+            headers: createHeaders(),
+            body: JSON.stringify(updateData)
+        });
+        const data: ProjectResponse = await handleResponse(response);
+        return data.project;
     }
 
     async deleteItem(id: string): Promise<void> {
-        await new Promise(resolve => setTimeout(resolve, 200))
-        const index = projectsData.findIndex(p => p.id === id)
-        if (index === -1) {
-            throw new Error(`Project with id ${id} not found`)
-        }
-        projectsData.splice(index, 1)
-        
-        // Also delete related subprojects, revisions, and files
-        subprojectsData = subprojectsData.filter(sp => sp.projectId !== id)
-        revisionsData = revisionsData.filter(r => r.projectId.toString() !== id)
-        filesData = filesData.filter(f => f.projectId !== id)
+        const response = await fetch(`${API_BASE_URL}/api/projects/${id}`, {
+            method: 'DELETE',
+            headers: createHeaders()
+        });
+        await handleResponse(response);
     }
 }
 
-// Mock Subproject Service Implementation
-class MockSubprojectService implements SubprojectService {
+// Subproject Service Implementation
+class ApiSubprojectService implements CrudService<Subproject> {
     async getItems(): Promise<Subproject[]> {
-        await new Promise(resolve => setTimeout(resolve, 100))
-        return [...subprojectsData]
+        const response = await fetch(`${API_BASE_URL}/api/projects`, {
+            headers: createHeaders()
+        });
+        const projects: ProjectListResponse = await handleResponse(response);
+        
+        // Get all subprojects for all projects
+        const allSubprojects: Subproject[] = [];
+        for (const project of projects.projects) {
+            const subprojectsResponse = await fetch(`${API_BASE_URL}/api/projects/${project.id}/subprojects`, {
+                headers: createHeaders()
+            });
+            const subprojectsData: SubprojectListResponse = await handleResponse(subprojectsResponse);
+            allSubprojects.push(...subprojectsData.subprojects);
+        }
+        return allSubprojects;
     }
 
     async getItem(id: string): Promise<Subproject> {
-        await new Promise(resolve => setTimeout(resolve, 100))
-        const subproject = subprojectsData.find(sp => sp.id === id)
-        if (!subproject) {
-            throw new Error(`Subproject with id ${id} not found`)
-        }
-        return subproject
+        const response = await fetch(`${API_BASE_URL}/api/subprojects/${id}`, {
+            headers: createHeaders()
+        });
+        const data: SubprojectResponse = await handleResponse(response);
+        return data.subproject;
     }
 
-    async createItem(item: Omit<Subproject, 'id' | 'createdAt' | 'updatedAt'>): Promise<Subproject> {
-        await new Promise(resolve => setTimeout(resolve, 200))
-        const now = new Date().toISOString().split('T')[0]
-        const newSubproject: Subproject = {
-            ...item,
-            id: generateId(),
-            createdAt: now,
-            updatedAt: now
-        }
-        subprojectsData.push(newSubproject)
-        return newSubproject
+    async createItem(item: SubprojectCreate & { project_id: number }): Promise<Subproject> {
+        const response = await fetch(`${API_BASE_URL}/api/projects/${item.project_id}/subprojects/create`, {
+            method: 'POST',
+            headers: createHeaders(),
+            body: JSON.stringify({
+                title: item.title,
+                description: item.description
+            })
+        });
+        const data: SubprojectResponse = await handleResponse(response);
+        return data.subproject;
     }
 
     async updateItem(item: Subproject): Promise<Subproject> {
-        await new Promise(resolve => setTimeout(resolve, 200))
-        const index = subprojectsData.findIndex(sp => sp.id === item.id)
-        if (index === -1) {
-            throw new Error(`Subproject with id ${item.id} not found`)
-        }
-        const updatedSubproject: Subproject = {
-            ...item,
-            updatedAt: new Date().toISOString().split('T')[0]
-        }
-        subprojectsData[index] = updatedSubproject
-        return updatedSubproject
+        const updateData: SubprojectUpdate = {
+            title: item.title,
+            description: item.description
+        };
+        const response = await fetch(`${API_BASE_URL}/api/subprojects/${item.id}`, {
+            method: 'PUT',
+            headers: createHeaders(),
+            body: JSON.stringify(updateData)
+        });
+        const data: SubprojectResponse = await handleResponse(response);
+        return data.subproject;
     }
 
     async deleteItem(id: string): Promise<void> {
-        await new Promise(resolve => setTimeout(resolve, 200))
-        const index = subprojectsData.findIndex(sp => sp.id === id)
-        if (index === -1) {
-            throw new Error(`Subproject with id ${id} not found`)
-        }
-        subprojectsData.splice(index, 1)
-        
-        // Also delete related revisions and files
-        revisionsData = revisionsData.filter(r => r.subprojectId !== id)
-        filesData = filesData.filter(f => f.subprojectId !== id)
+        const response = await fetch(`${API_BASE_URL}/api/subprojects/${id}`, {
+            method: 'DELETE',
+            headers: createHeaders()
+        });
+        await handleResponse(response);
+    }
+
+    // Get subprojects for a specific project
+    async getSubprojectsByProject(projectId: number): Promise<Subproject[]> {
+        const response = await fetch(`${API_BASE_URL}/api/projects/${projectId}/subprojects`, {
+            headers: createHeaders()
+        });
+        const data: SubprojectListResponse = await handleResponse(response);
+        return data.subprojects;
     }
 }
 
-// Mock Revision Service Implementation
-class MockRevisionService implements RevisionService {
+// Revision Service Implementation
+class ApiRevisionService implements CrudService<Revision> {
     async getItems(): Promise<Revision[]> {
-        await new Promise(resolve => setTimeout(resolve, 100))
-        return [...revisionsData]
+        // Get all subprojects first, then get revisions for each
+        const subprojectService = new ApiSubprojectService();
+        const allSubprojects = await subprojectService.getItems();
+        
+        const allRevisions: Revision[] = [];
+        for (const subproject of allSubprojects) {
+            const revisionsResponse = await fetch(`${API_BASE_URL}/api/subprojects/${subproject.id}/revisions`, {
+                headers: createHeaders()
+            });
+            const revisionsData: RevisionListResponse = await handleResponse(revisionsResponse);
+            allRevisions.push(...revisionsData.revisions);
+        }
+        return allRevisions;
     }
 
     async getItem(id: string): Promise<Revision> {
-        await new Promise(resolve => setTimeout(resolve, 100))
-        const revision = revisionsData.find(r => r.id.toString() === id)
-        if (!revision) {
-            throw new Error(`Revision with id ${id} not found`)
-        }
-        return revision
+        const response = await fetch(`${API_BASE_URL}/api/revisions/${id}`, {
+            headers: createHeaders()
+        });
+        const data: RevisionResponse = await handleResponse(response);
+        return data.revision;
     }
 
-    async createItem(item: Omit<Revision, 'id' | 'createdAt'>): Promise<Revision> {
-        await new Promise(resolve => setTimeout(resolve, 200))
-        const newRevision: Revision = {
-            ...item,
-            id: generateNumericId(),
-            createdAt: new Date().toISOString()
-        }
-        revisionsData.push(newRevision)
-        return newRevision
+    async createItem(item: RevisionCreate & { subproject_id: number }): Promise<Revision> {
+        const response = await fetch(`${API_BASE_URL}/api/subprojects/${item.subproject_id}/revisions/create`, {
+            method: 'POST',
+            headers: createHeaders(),
+            body: JSON.stringify({
+                revision_number: item.revision_number,
+                title: item.title,
+                description: item.description
+            })
+        });
+        const data: RevisionResponse = await handleResponse(response);
+        return data.revision;
     }
 
     async updateItem(item: Revision): Promise<Revision> {
-        await new Promise(resolve => setTimeout(resolve, 200))
-        const index = revisionsData.findIndex(r => r.id === item.id)
-        if (index === -1) {
-            throw new Error(`Revision with id ${item.id} not found`)
-        }
-        revisionsData[index] = item
-        return item
+        const updateData: RevisionUpdate = {
+            title: item.title,
+            description: item.description
+        };
+        const response = await fetch(`${API_BASE_URL}/api/revisions/${item.id}`, {
+            method: 'PUT',
+            headers: createHeaders(),
+            body: JSON.stringify(updateData)
+        });
+        const data: RevisionResponse = await handleResponse(response);
+        return data.revision;
     }
 
     async deleteItem(id: string): Promise<void> {
-        await new Promise(resolve => setTimeout(resolve, 200))
-        const index = revisionsData.findIndex(r => r.id.toString() === id)
-        if (index === -1) {
-            throw new Error(`Revision with id ${id} not found`)
-        }
-        revisionsData.splice(index, 1)
-        
-        // Also delete related files
-        filesData = filesData.filter(f => f.revisionId?.toString() !== id)
+        const response = await fetch(`${API_BASE_URL}/api/revisions/${id}`, {
+            method: 'DELETE',
+            headers: createHeaders()
+        });
+        await handleResponse(response);
+    }
+
+    // Get revisions for a specific subproject
+    async getRevisionsBySubproject(subprojectId: number): Promise<Revision[]> {
+        const response = await fetch(`${API_BASE_URL}/api/subprojects/${subprojectId}/revisions`, {
+            headers: createHeaders()
+        });
+        const data: RevisionListResponse = await handleResponse(response);
+        return data.revisions;
     }
 }
 
-// Mock File Service Implementation
-class MockFileService implements FileService {
+// File Service Implementation
+class ApiFileService implements CrudService<File> {
     async getItems(): Promise<File[]> {
-        await new Promise(resolve => setTimeout(resolve, 100))
-        return [...filesData]
+        const response = await fetch(`${API_BASE_URL}/api/files`, {
+            headers: createHeaders()
+        });
+        const data: FileListResponse = await handleResponse(response);
+        return data.files;
     }
 
     async getItem(id: string): Promise<File> {
-        await new Promise(resolve => setTimeout(resolve, 100))
-        const file = filesData.find(f => f.id.toString() === id)
-        if (!file) {
-            throw new Error(`File with id ${id} not found`)
-        }
-        return file
+        const response = await fetch(`${API_BASE_URL}/api/files/${id}/info`, {
+            headers: createHeaders()
+        });
+        const data: FileResponse = await handleResponse(response);
+        return data.file;
     }
 
-    async createItem(item: Omit<File, 'id' | 'uuid' | 'createdAt' | 'updatedAt'>): Promise<File> {
-        await new Promise(resolve => setTimeout(resolve, 200))
-        const now = new Date().toISOString()
-        const newFile: File = {
-            ...item,
-            id: generateNumericId(),
-            uuid: `550e8400-e29b-41d4-a716-${Math.random().toString(36).substr(2, 12)}`,
-            createdAt: now,
-            updatedAt: now
-        }
-        filesData.push(newFile)
-        return newFile
+    async createItem(item: FileUpload): Promise<File> {
+        const formData = new FormData();
+        formData.append('name', item.name);
+        formData.append('document_type', item.document_type);
+        if (item.revision_id) formData.append('revision_id', item.revision_id.toString());
+        if (item.project_id) formData.append('project_id', item.project_id.toString());
+        if (item.subproject_id) formData.append('subproject_id', item.subproject_id.toString());
+
+        const response = await fetch(`${API_BASE_URL}/api/files`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${getAuthToken()}`
+            },
+            body: formData
+        });
+        const data: FileResponse = await handleResponse(response);
+        return data.file;
     }
 
-    async updateItem(item: File): Promise<File> {
-        await new Promise(resolve => setTimeout(resolve, 200))
-        const index = filesData.findIndex(f => f.id === item.id)
-        if (index === -1) {
-            throw new Error(`File with id ${item.id} not found`)
-        }
-        const updatedFile: File = {
-            ...item,
-            updatedAt: new Date().toISOString()
-        }
-        filesData[index] = updatedFile
-        return updatedFile
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    async updateItem(_item: File): Promise<File> {
+        // Note: The API doesn't seem to have an update endpoint for files
+        // This might need to be implemented differently or removed
+        throw new Error('File update not supported by the API');
     }
 
     async deleteItem(id: string): Promise<void> {
-        await new Promise(resolve => setTimeout(resolve, 200))
-        const index = filesData.findIndex(f => f.id.toString() === id)
-        if (index === -1) {
-            throw new Error(`File with id ${id} not found`)
-        }
-        filesData.splice(index, 1)
+        const response = await fetch(`${API_BASE_URL}/api/files/${id}`, {
+            method: 'DELETE',
+            headers: createHeaders()
+        });
+        await handleResponse(response);
+    }
+
+    // Get download URL for a file
+    async getDownloadUrl(fileId: number): Promise<DownloadUrlResponse> {
+        const response = await fetch(`${API_BASE_URL}/api/files/${fileId}/download`, {
+            headers: createHeaders()
+        });
+        return handleResponse(response);
     }
 }
 
 // Service instances
-export const projectService: ProjectService = new MockProjectService()
-export const subprojectService: SubprojectService = new MockSubprojectService()
-export const revisionService: RevisionService = new MockRevisionService()
-export const fileService: FileService = new MockFileService()
+export const projectService: ApiProjectService = new ApiProjectService();
+export const subprojectService: ApiSubprojectService = new ApiSubprojectService();
+export const revisionService: ApiRevisionService = new ApiRevisionService();
+export const fileService: ApiFileService = new ApiFileService();
 
-// Additional utility functions for data management
-export const resetMockData = () => {
-    projectsData = [...mockProjects]
-    subprojectsData = [...mockSubprojects]
-    revisionsData = [...mockRevisions]
-    filesData = [...mockFiles]
-}
-
-export const getMockDataStats = () => {
-    return {
-        projects: projectsData.length,
-        subprojects: subprojectsData.length,
-        revisions: revisionsData.length,
-        files: filesData.length
-    }
-}
+// Export types for convenience
+export type { Project, ProjectCreate, ProjectUpdate } from "../types/project";
+export type { Subproject, SubprojectCreate, SubprojectUpdate } from "../types/subpoject";
+export type { Revision, RevisionCreate, RevisionUpdate } from "../types/revision";
+export type { File, FileUpload } from "../types/file";

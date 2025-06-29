@@ -6,10 +6,10 @@ import useAuth from '../auth/AuthHook';
 const Navigation = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { setAuth } = useAuth();
+  const { user, logout } = useAuth();
 
-  const handleLogout = () => {
-    setAuth(false);
+  const handleLogout = async () => {
+    await logout();
     navigate('/login');
   };
 
@@ -29,6 +29,23 @@ const Navigation = () => {
     { path: fileRoute, label: 'Файлы' },
   ];
 
+  // Get user initials for avatar
+  const getUserInitials = () => {
+    if (!user?.full_name) return 'U';
+    return user.full_name
+      .split(' ')
+      .map(name => name.charAt(0))
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  // Get display name
+  const getDisplayName = () => {
+    if (user?.full_name) return user.full_name;
+    if (user?.email) return user.email;
+    return 'Пользователь';
+  };
 
   return (
     <Box
@@ -58,14 +75,14 @@ const Navigation = () => {
         {routes.map(({path, label}) => {
           return (
             <Button
+              key={path}
               variant={isActiveRoute(path) ? 'solid' : 'plain'}
               color={isActiveRoute(path) ? 'primary' : 'neutral'}
               onClick={() => navigate(path)}
               sx={{
                 width: '100%',
                 justifyContent: 'flex-start',
-                mb: 1,
-                textAlign: 'left',
+                mb: 1,  textAlign: 'left',
               }}
             >
               {label}
@@ -78,9 +95,18 @@ const Navigation = () => {
       <Box sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
           <Avatar size="sm" sx={{ bgcolor: 'primary.500' }}>
-            U
+            {getUserInitials()}
           </Avatar>
-          <Typography level="body-sm">Пользователь</Typography>
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography level="body-sm" sx={{ fontWeight: 'medium' }}>
+              {getDisplayName()}
+            </Typography>
+            {user?.email && (
+              <Typography level="body-xs" sx={{ color: 'text.secondary' }}>
+                {user.email}
+              </Typography>
+            )}
+          </Box>
         </Box>
         <Button
           variant="outlined"

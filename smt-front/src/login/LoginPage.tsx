@@ -1,35 +1,41 @@
-import {Box, Button, Checkbox, Container, FormControl, FormLabel, Input, Typography} from "@mui/joy";
+import {Box, Button, Checkbox, Container, FormControl, FormLabel, Input, Typography, Alert} from "@mui/joy";
+import { useState } from "react";
 import useAuth from "../auth/AuthHook";
-import {useLocation, useNavigate} from "react-router";
-
-const handleSubmit = async (event: React.FormEvent<HTMLFormElement>, onSuccess: VoidFunction, onError: VoidFunction) => {
-    event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    
-    // Mock login API call
-    const loginData = {
-        login: data.get("email") as string,
-        password: data.get("password") as string
-    };
-    
-    console.log("Mock login attempt with:", loginData);
-    
-    // Simulate API call delay
-    setTimeout(() => {
-        // Mock successful login (you can change this logic)
-        if (loginData.login && loginData.password) {
-            onSuccess();
-        } else {
-            onError();
-        }
-    }, 500);
-};
+import { useLocation, useNavigate } from "react-router";
+import { authService } from "../api/AuthService";
 
 const LoginPage = () => {
-    const {setAuth} = useAuth();
+    const { setAuth } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
     const from = location.state?.from?.pathname || '/';
+    
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        setError(null);
+        setIsLoading(true);
+        
+        const data = new FormData(event.currentTarget);
+        
+        const loginData = {
+            email: data.get("email") as string,
+            password: data.get("password") as string
+        };
+        
+        try {
+            const response = await authService.login(loginData);
+            setAuth(true, response.user);
+            navigate(from, { replace: true });
+        } catch (error) {
+            console.error("Login error:", error);
+            setError(error instanceof Error ? error.message : "Ошибка входа. Проверьте логин и пароль.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     return (
         <Container component="main" maxWidth="xs">
@@ -44,26 +50,23 @@ const LoginPage = () => {
                 <Typography level="h4">
                     Авторизация
                 </Typography>
-                <Box component="form" onSubmit={
-                    (event) => handleSubmit(
-                        event,
-                        () => {
-                            setAuth(true);
-                            navigate(from, {replace: true});
-                        },
-                        () => {
-                            console.log("Ошибка");
-                        },
-                    )
-                } noValidate sx={{mt: 1, width: '100%'}}>
+                
+                {error && (
+                    <Alert color="danger" sx={{ width: '100%', mt: 2 }}>
+                        {error}
+                    </Alert>
+                )}
+                
+                <Box component="form" onSubmit={handleSubmit} noValidate sx={{mt: 1, width: '100%'}}>
                     <FormControl required sx={{ width: '100%', mb: 2 }}>
-                        <FormLabel>Логин или почта</FormLabel>
+                        <FormLabel>Email</FormLabel>
                         <Input
                             id="email"
                             name="email"
                             type="email"
                             autoComplete="email"
                             autoFocus
+                            disabled={isLoading}
                         />
                     </FormControl>
                     <FormControl required sx={{ width: '100%', mb: 2 }}>
@@ -73,18 +76,20 @@ const LoginPage = () => {
                             type="password"
                             id="password"
                             autoComplete="current-password"
+                            disabled={isLoading}
                         />
                     </FormControl>
                     <Box sx={{ mb: 2 }}>
-                        <Checkbox label="Запомнить меня" />
+                        <Checkbox label="Запомнить меня" disabled={isLoading} />
                     </Box>
                     <Button
                         type="submit"
                         fullWidth
                         variant="solid"
                         sx={{mt: 3, mb: 2}}
+                        disabled={isLoading}
                     >
-                        Войти
+                        {isLoading ? "Вход..." : "Войти"}
                     </Button>
                     <Button
                         type="button"
@@ -92,6 +97,7 @@ const LoginPage = () => {
                         variant="outlined"
                         sx={{mt: 1, mb: 2}}
                         onClick={() => navigate("/register")}
+                        disabled={isLoading}
                     >
                         Зарегистрироваться
                     </Button>

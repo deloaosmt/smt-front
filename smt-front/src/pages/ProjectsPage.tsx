@@ -5,6 +5,7 @@ import DataGrid from '../components/DataGrid';
 import DataCard from '../components/DataCard';
 import type { Project } from '../types/project';
 import { projectService } from '../api/Services';
+import { CircularLoader } from '../components/CircularLoader';
 
 const ProjectsPage = () => {
   const navigate = useNavigate();
@@ -20,7 +21,7 @@ const ProjectsPage = () => {
     try {
       const newProject = await projectService.createItem({
         title: formData.title,
-        description: formData.description
+        description: formData.description || null
       });
       console.log('Project created:', newProject);
       // Refresh the projects list
@@ -32,34 +33,38 @@ const ProjectsPage = () => {
   };
 
   const [projects, setProjects] = useState<Project[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    projectService.getItems().then(setProjects);
+    projectService.getItems().then(setProjects).then(() => setIsLoading(false));
   }, []);
 
   return (
     <>
       <Navigation />
-      <DataGrid<Project>
-        title="Проекты"
-        items={projects}
-        renderCard={(project) => (
-          <DataCard
-            item={project}
-            onForwardClick={() => handleProjectClick(project)}
-          />
-        )}
-        onCreateItem={handleCreateProject}
-        createModalTitle="Создать проект"
-        createModalDescription="Заполните информацию о проекте."
-        createButtonText="Создать проект"
-        formFields={[
-          { name: 'title', label: 'Название проекта', required: true },
-          { name: 'description', label: 'Описание проекта', required: true }
-        ]}
-        emptyStateTitle="Нет проектов"
-        emptyStateDescription="Создайте свой первый проект для начала"
-      />
+      {isLoading && <CircularLoader />}
+      {!isLoading &&
+        <DataGrid<Project>
+          title="Проекты"
+          items={projects}
+          renderCard={(project) => (
+            <DataCard
+              item={project}
+              onForwardClick={() => handleProjectClick(project)}
+            />
+          )}
+          onCreateItem={handleCreateProject}
+          createModalTitle="Создать проект"
+          createModalDescription="Заполните информацию о проекте."
+          createButtonText="Создать проект"
+          formFields={[
+            { name: 'title', label: 'Название проекта', required: true },
+            { name: 'description', label: 'Описание проекта', required: false }
+          ]}
+          emptyStateTitle="Нет проектов"
+          emptyStateDescription="Создайте свой первый проект для начала"
+        />
+      }
     </>
   );
 };

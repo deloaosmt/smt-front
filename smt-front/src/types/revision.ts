@@ -1,14 +1,28 @@
 export interface Revision {
   id: number;
-  revisionNumber: number;
-  projectId: number;
-  subprojectId: string;
+  revision_number: number;
   title: string;
-  description: string;
-  createdAt: string;
+  description?: string | null;
+  subproject_id: number;
+  created_at: string;
+  updated_at: string;
 }
 
-// Backend response wrapper type
+export interface RevisionCreate {
+  revision_number: number;
+  title: string;
+  description?: string | null;
+}
+
+export interface RevisionUpdate {
+  title?: string;
+  description?: string | null;
+}
+
 export interface RevisionResponse {
   revision: Revision;
+}
+
+export interface RevisionListResponse {
+  revisions: Revision[];
 } 

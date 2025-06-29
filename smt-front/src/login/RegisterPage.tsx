@@ -1,27 +1,50 @@
-import React from "react";
+import React, { useState } from "react";
 import {
-    Autocomplete,
     Box,
     Button,
     Container,
     FormControl,
     FormLabel,
     Input,
-    Typography
+    Typography,
+    Alert
 } from "@mui/joy";
 import useAuth from "../auth/AuthHook";
-import {useLocation, useNavigate} from "react-router";
-import { doRegister } from "./registerUtils";
+import { useLocation, useNavigate } from "react-router";
+import { authService } from "../api/AuthService";
 
 const RegisterPage = () => {
-    const {setAuth} = useAuth();
+    const { setAuth } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
     const from = location.state?.from?.pathname || '/';
+    
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
-    const onSuccess = () => {
-        setAuth(true);
-        navigate(from, {replace: true});
+    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        setError(null);
+        setIsLoading(true);
+        
+        const data = new FormData(event.currentTarget);
+        
+        const registerData = {
+            email: data.get("email") as string,
+            password: data.get("password") as string,
+            full_name: `${data.get("first_name")} ${data.get("last_name")}`.trim() || null
+        };
+        
+        try {
+            const response = await authService.register(registerData);
+            setAuth(true, response.user);
+            navigate(from, { replace: true });
+        } catch (error) {
+            console.error("Registration error:", error);
+            setError(error instanceof Error ? error.message : "Ошибка регистрации. Попробуйте еще раз.");
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -38,15 +61,21 @@ const RegisterPage = () => {
                 <Typography level="h4">
                     Регистрация
                 </Typography>
-                <Box component="form"
-                     onSubmit={(event) => doRegister(event, onSuccess, () => console.log("Registration failed"))}
-                     sx={{mt: 1, width: '100%'}}>
+                
+                {error && (
+                    <Alert color="danger" sx={{ width: '100%', mt: 2 }}>
+                        {error}
+                    </Alert>
+                )}
+                
+                <Box component="form" onSubmit={handleSubmit} sx={{mt: 1, width: '100%'}}>
                     <FormControl required sx={{ width: '100%', mb: 2 }}>
                         <FormLabel>Имя</FormLabel>
                         <Input
                             id="first_name"
                             name="first_name"
                             autoFocus
+                            disabled={isLoading}
                         />
                     </FormControl>
                     <FormControl required sx={{ width: '100%', mb: 2 }}>
@@ -54,6 +83,7 @@ const RegisterPage = () => {
                         <Input
                             id="last_name"
                             name="last_name"
+                            disabled={isLoading}
                         />
                     </FormControl>
                     <FormControl required sx={{ width: '100%', mb: 2 }}>
@@ -63,6 +93,7 @@ const RegisterPage = () => {
                             name="email"
                             type="email"
                             autoComplete="email"
+                            disabled={isLoading}
                         />
                     </FormControl>
                     <FormControl required sx={{ width: '100%', mb: 2 }}>
@@ -72,6 +103,7 @@ const RegisterPage = () => {
                             type="password"
                             id="password"
                             autoComplete="new-password"
+                            disabled={isLoading}
                         />
                     </FormControl>
                     <Button
@@ -79,8 +111,19 @@ const RegisterPage = () => {
                         fullWidth
                         variant="solid"
                         sx={{mt: 3, mb: 2}}
+                        disabled={isLoading}
                     >
-                        Зарегистрироваться
+                        {isLoading ? "Регистрация..." : "Зарегистрироваться"}
+                    </Button>
+                    <Button
+                        type="button"
+                        fullWidth
+                        variant="outlined"
+                        sx={{mt: 1, mb: 2}}
+                        onClick={() => navigate("/login")}
+                        disabled={isLoading}
+                    >
+                        Уже есть аккаунт? Войти
                     </Button>
                 </Box>
             </Box>

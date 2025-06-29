@@ -1,18 +1,38 @@
 export interface File {
   id: number;
-  uuid: string;
-  originalFilename: string;
-  displayName: string;
-  mimeType: string;
-  fileSize: number;
-  s3Key: string;
-  s3Bucket: string;
-  documentType?: string;
-  createdAt: string;
-  updatedAt: string;
-  projectId?: string;
-  subprojectId?: string;
-  revisionId?: number;
+  filename: string;
+  name: string;
+  mime_type: string;
+  file_size: number;
+  s3_key: string;
+  s3_bucket: string;
+  document_type?: string | null;
+  created_at: string;
+  updated_at: string;
+  revision_id?: number | null;
+  project_id?: number | null;
+  subproject_id?: number | null;
+}
+
+export interface FileUpload {
+  name: string;
+  document_type: string;
+  revision_id?: number | null;
+  project_id?: number | null;
+  subproject_id?: number | null;
+}
+
+export interface FileResponse {
+  file: File;
+}
+
+export interface FileListResponse {
+  files: File[];
+}
+
+export interface DownloadUrlResponse {
+  download_url: string;
+  expires_in: number;
 }
 
 export interface UploadInfo {
@@ -32,9 +52,4 @@ export interface GenerateInfo {
 export interface TopSideInfo {
   left: UploadInfo;
   right: GenerateInfo;
-}
-
-// Backend response wrapper types
-export interface FileResponse {
-  file: File;
 } 

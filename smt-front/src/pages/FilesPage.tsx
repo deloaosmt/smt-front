@@ -5,14 +5,16 @@ import DataGrid from '../components/DataGrid';
 import DataCard from '../components/DataCard';
 import type { File } from '../types/file';
 import { fileService } from '../api/Services';
+import { CircularLoader } from '../components/CircularLoader';
 
 const FilesPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [initialSearchFields, setInitialSearchFields] = useState<Array<string | null>>([]);
   const [files, setFiles] = useState<File[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fileService.getItems().then(setFiles);
+    fileService.getItems().then(setFiles).then(() => setIsLoading(false));
   }, []);
 
   const handleFileClick = (file: File) => {
@@ -24,13 +26,11 @@ const FilesPage = () => {
     console.log('Creating file with data:', formData);
     try {
       const newFile = await fileService.createItem({
-        originalFilename: formData.displayName,
-        displayName: formData.displayName,
-        mimeType: 'application/pdf',
-        fileSize: 0,
-        s3Key: `files/${formData.displayName}`,
-        s3Bucket: 'construction-docs',
-        documentType: 'document'
+        name: formData.displayName,
+        document_type: formData.documentType || 'document',
+        revision_id: formData.revisionId ? parseInt(formData.revisionId) : null,
+        project_id: formData.projectId ? parseInt(formData.projectId) : null,
+        subproject_id: formData.subprojectId ? parseInt(formData.subprojectId) : null
       });
       console.log('File created:', newFile);
       // Refresh the files list
@@ -88,33 +88,39 @@ const FilesPage = () => {
   return (
     <>
       <Navigation />
-      <DataGrid<File>
-        title="Файлы"
-        items={files}
-        renderCard={(file) => (
-          <DataCard 
-            item={file} 
-            onClick={() => handleFileClick(file)}
-            showChip={true}
-            chipColor="primary"
-          />
-        )}
-        onCreateItem={handleCreateFile}
-        createModalTitle="Создать файл"
-        createModalDescription="Заполните информацию о файле."
-        createButtonText="Создать файл"
-        formFields={[
-          { name: 'displayName', label: 'Название файла', required: true },
-          { name: 'description', label: 'Описание файла', required: true }
-        ]}
-        emptyStateTitle="Нет файлов"
-        emptyStateDescription="Создайте свой первый файл для начала"
-        searchConfig={{
-          searchOptions: searchOptions,
-          onChange: handleSearchChange,
-          initialValues: initialSearchFields
-        }}
-      />
+      {isLoading && <CircularLoader />}
+      {!isLoading && 
+        <DataGrid<File>
+          title="Файлы"
+          items={files}
+          renderCard={(file) => (
+            <DataCard 
+              item={file} 
+              onClick={() => handleFileClick(file)}
+              showChip={true}
+              chipColor="primary"
+            />
+          )}
+          onCreateItem={handleCreateFile}
+          createModalTitle="Создать файл"
+          createModalDescription="Заполните информацию о файле."
+          createButtonText="Создать файл"
+          formFields={[
+            { name: 'displayName', label: 'Название файла', required: true },
+            { name: 'documentType', label: 'Тип документа', required: true },
+            { name: 'projectId', label: 'ID проекта', required: false },
+            { name: 'subprojectId', label: 'ID подпроекта', required: false },
+            { name: 'revisionId', label: 'ID ревизии', required: false }
+          ]}
+          emptyStateTitle="Нет файлов"
+          emptyStateDescription="Создайте свой первый файл для начала"
+          searchConfig={{
+            searchOptions: searchOptions,
+            onChange: handleSearchChange,
+            initialValues: initialSearchFields
+          }}
+        />
+      }
     </>
   );
 };
