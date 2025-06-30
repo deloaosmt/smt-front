@@ -8,6 +8,7 @@ import type { Subproject } from '../types/subpoject';
 import type { Project } from '../types/project';
 import { revisionService, subprojectService, projectService } from '../api/Services';
 import { CircularLoader } from '../components/CircularLoader';
+import Button from '@mui/joy/Button';
 
 const RevisionsPage = () => {
   const { subprojectId } = useParams<{ subprojectId?: string }>();
@@ -24,28 +25,37 @@ const RevisionsPage = () => {
       try {
         if (subprojectId) {
           // Load revisions for specific subproject
-          const subprojectRevisions = await revisionService.getRevisionsBySubproject(parseInt(subprojectId));
+          const subprojectRevisions = await revisionService.getRevisions(parseInt(subprojectId));
           setRevisions(subprojectRevisions);
           
           // Load subproject and project info
-          const subproject = await subprojectService.getItem(subprojectId);
+          const subproject = await subprojectService.getSubproject(parseInt(subprojectId));
           setSubprojects([subproject]);
           
-          const project = await projectService.getItem(subproject.project_id.toString());
+          const project = await projectService.getProject(subproject.project_id);
           setProjects([project]);
           
           setTitle(`Ревизии подпроекта "${subproject.title}"`);
         } else {
-          // Load all revisions
-          const allRevisions = await revisionService.getItems();
-          setRevisions(allRevisions);
-          
-          // Load all subprojects and projects for reference
-          const allSubprojects = await subprojectService.getItems();
-          setSubprojects(allSubprojects);
-          
-          const allProjects = await projectService.getItems();
+          // Load all projects first, then get subprojects and revisions
+          const allProjects = await projectService.getProjects();
           setProjects(allProjects);
+          
+          const allSubprojects: Subproject[] = [];
+          const allRevisions: Revision[] = [];
+          
+          for (const project of allProjects) {
+            const projectSubprojects = await subprojectService.getSubprojects(project.id);
+            allSubprojects.push(...projectSubprojects);
+            
+            for (const subproject of projectSubprojects) {
+              const subprojectRevisions = await revisionService.getRevisions(subproject.id);
+              allRevisions.push(...subprojectRevisions);
+            }
+          }
+          
+          setSubprojects(allSubprojects);
+          setRevisions(allRevisions);
         }
       } catch (error) {
         console.error('Error loading data:', error);
@@ -85,15 +95,14 @@ const RevisionsPage = () => {
         throw new Error('Subproject ID is required to create a revision');
       }
       
-      const newRevision = await revisionService.createItem({
+      const newRevision = await revisionService.createRevision(parseInt(subprojectId), {
         revision_number: parseInt(formData.revisionNumber),
         title: formData.title,
-        description: formData.description || null,
-        subproject_id: parseInt(subprojectId)
+        description: formData.description || null
       });
       console.log('Revision created:', newRevision);
       // Refresh the revisions list
-      const updatedRevisions = await revisionService.getRevisionsBySubproject(parseInt(subprojectId));
+      const updatedRevisions = await revisionService.getRevisions(parseInt(subprojectId));
       setRevisions(updatedRevisions);
     } catch (error) {
       console.error('Error creating revision:', error);
@@ -119,11 +128,12 @@ const RevisionsPage = () => {
           items={revisions}
           renderCard={(revision) => (
             <DataCard 
-              item={revision} 
-              onForwardClick={() => handleRevisionClick(revision)}
-              showChip={true}
-              chipColor="success"
-            />
+              title={revision.title}
+            >
+              <Button variant="outlined" color="neutral" size="sm" onClick={() => handleRevisionClick(revision)}>
+                Открыть
+              </Button>
+            </DataCard>
           )}
           onCreateItem={handleCreateRevision}
           createModalTitle="Создать ревизию"

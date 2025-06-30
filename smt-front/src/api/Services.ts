@@ -29,276 +29,258 @@ const createHeaders = (): HeadersInit => {
   };
 };
 
-// Base CRUD Service Interface
-interface CrudService<T> {
-    getItems(): Promise<T[]>
-    getItem(id: string): Promise<T>
-    updateItem(item: T): Promise<T>
-    deleteItem(id: string): Promise<void>
+// Project Service - matches OpenAPI specification
+class ProjectService {
+  // GET /api/projects - list all projects
+  async getProjects(offset: number = 0, limit: number = 1000): Promise<Project[]> {
+    const response = await fetch(`${API_BASE_URL}/api/projects?offset=${offset}&limit=${limit}`, {
+      headers: createHeaders()
+    });
+    const data: ProjectListResponse = await handleResponse(response);
+    return data.projects;
+  }
+
+  // GET /api/projects/{project_id} - get a specific project
+  async getProject(projectId: number): Promise<Project> {
+    const response = await fetch(`${API_BASE_URL}/api/projects/${projectId}`, {
+      headers: createHeaders()
+    });
+    const data: ProjectResponse = await handleResponse(response);
+    return data.project;
+  }
+
+  // POST /api/projects/create - create a new project
+  async createProject(projectData: ProjectCreate): Promise<Project> {
+    const response = await fetch(`${API_BASE_URL}/api/projects/create`, {
+      method: 'POST',
+      headers: createHeaders(),
+      body: JSON.stringify(projectData)
+    });
+    const data: ProjectResponse = await handleResponse(response);
+    return data.project;
+  }
+
+  // PUT /api/projects/{project_id} - update a project
+  async updateProject(projectId: number, projectData: ProjectUpdate): Promise<Project> {
+    const response = await fetch(`${API_BASE_URL}/api/projects/${projectId}`, {
+      method: 'PUT',
+      headers: createHeaders(),
+      body: JSON.stringify(projectData)
+    });
+    const data: ProjectResponse = await handleResponse(response);
+    return data.project;
+  }
+
+  // DELETE /api/projects/{project_id} - delete a project
+  async deleteProject(projectId: number): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/api/projects/${projectId}`, {
+      method: 'DELETE',
+      headers: createHeaders()
+    });
+    await handleResponse(response);
+  }
 }
 
-// Project Service Implementation
-class ApiProjectService implements CrudService<Project> {
-    async getItems(): Promise<Project[]> {
-        const response = await fetch(`${API_BASE_URL}/api/projects`, {
-            headers: createHeaders()
-        });
-        const data: ProjectListResponse = await handleResponse(response);
-        return data.projects;
-    }
+// Subproject Service - matches OpenAPI specification
+class SubprojectService {
+  // GET /api/projects/{project_id}/subprojects - list subprojects for a project
+  async getSubprojects(projectId: number, offset: number = 0, limit: number = 1000): Promise<Subproject[]> {
+    const response = await fetch(`${API_BASE_URL}/api/projects/${projectId}/subprojects?offset=${offset}&limit=${limit}`, {
+      headers: createHeaders()
+    });
+    const data: SubprojectListResponse = await handleResponse(response);
+    return data.subprojects;
+  }
 
-    async getItem(id: string): Promise<Project> {
-        const response = await fetch(`${API_BASE_URL}/api/projects/${id}`, {
-            headers: createHeaders()
-        });
-        const data: ProjectResponse = await handleResponse(response);
-        return data.project;
-    }
+  // GET /api/subprojects/{subproject_id} - get a specific subproject
+  async getSubproject(subprojectId: number): Promise<Subproject> {
+    const response = await fetch(`${API_BASE_URL}/api/subprojects/${subprojectId}`, {
+      headers: createHeaders()
+    });
+    const data: SubprojectResponse = await handleResponse(response);
+    return data.subproject;
+  }
 
-    async createItem(item: ProjectCreate): Promise<Project> {
-        const response = await fetch(`${API_BASE_URL}/api/projects/create`, {
-            method: 'POST',
-            headers: createHeaders(),
-            body: JSON.stringify(item)
-        });
-        const data: ProjectResponse = await handleResponse(response);
-        return data.project;
-    }
+  // POST /api/projects/{project_id}/subprojects/create - create a new subproject
+  async createSubproject(projectId: number, subprojectData: SubprojectCreate): Promise<Subproject> {
+    const response = await fetch(`${API_BASE_URL}/api/projects/${projectId}/subprojects/create`, {
+      method: 'POST',
+      headers: createHeaders(),
+      body: JSON.stringify(subprojectData)
+    });
+    const data: SubprojectResponse = await handleResponse(response);
+    return data.subproject;
+  }
 
-    async updateItem(item: Project): Promise<Project> {
-        const updateData: ProjectUpdate = {
-            title: item.title,
-            description: item.description
-        };
-        const response = await fetch(`${API_BASE_URL}/api/projects/${item.id}`, {
-            method: 'PUT',
-            headers: createHeaders(),
-            body: JSON.stringify(updateData)
-        });
-        const data: ProjectResponse = await handleResponse(response);
-        return data.project;
-    }
+  // PUT /api/subprojects/{subproject_id} - update a subproject
+  async updateSubproject(subprojectId: number, subprojectData: SubprojectUpdate): Promise<Subproject> {
+    const response = await fetch(`${API_BASE_URL}/api/subprojects/${subprojectId}`, {
+      method: 'PUT',
+      headers: createHeaders(),
+      body: JSON.stringify(subprojectData)
+    });
+    const data: SubprojectResponse = await handleResponse(response);
+    return data.subproject;
+  }
 
-    async deleteItem(id: string): Promise<void> {
-        const response = await fetch(`${API_BASE_URL}/api/projects/${id}`, {
-            method: 'DELETE',
-            headers: createHeaders()
-        });
-        await handleResponse(response);
-    }
+  // DELETE /api/subprojects/{subproject_id} - delete a subproject
+  async deleteSubproject(subprojectId: number): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/api/subprojects/${subprojectId}`, {
+      method: 'DELETE',
+      headers: createHeaders()
+    });
+    await handleResponse(response);
+  }
 }
 
-// Subproject Service Implementation
-class ApiSubprojectService implements CrudService<Subproject> {
-    async getItems(): Promise<Subproject[]> {
-        const response = await fetch(`${API_BASE_URL}/api/projects`, {
-            headers: createHeaders()
-        });
-        const projects: ProjectListResponse = await handleResponse(response);
-        
-        // Get all subprojects for all projects
-        const allSubprojects: Subproject[] = [];
-        for (const project of projects.projects) {
-            const subprojectsResponse = await fetch(`${API_BASE_URL}/api/projects/${project.id}/subprojects`, {
-                headers: createHeaders()
-            });
-            const subprojectsData: SubprojectListResponse = await handleResponse(subprojectsResponse);
-            allSubprojects.push(...subprojectsData.subprojects);
-        }
-        return allSubprojects;
-    }
+// Revision Service - matches OpenAPI specification
+class RevisionService {
+  // GET /api/subprojects/{subproject_id}/revisions - list revisions for a subproject
+  async getRevisions(subprojectId: number, offset: number = 0, limit: number = 1000): Promise<Revision[]> {
+    const response = await fetch(`${API_BASE_URL}/api/subprojects/${subprojectId}/revisions?offset=${offset}&limit=${limit}`, {
+      headers: createHeaders()
+    });
+    const data: RevisionListResponse = await handleResponse(response);
+    return data.revisions;
+  }
 
-    async getItem(id: string): Promise<Subproject> {
-        const response = await fetch(`${API_BASE_URL}/api/subprojects/${id}`, {
-            headers: createHeaders()
-        });
-        const data: SubprojectResponse = await handleResponse(response);
-        return data.subproject;
-    }
+  // GET /api/revisions/{revision_id} - get a specific revision
+  async getRevision(revisionId: number): Promise<Revision> {
+    const response = await fetch(`${API_BASE_URL}/api/revisions/${revisionId}`, {
+      headers: createHeaders()
+    });
+    const data: RevisionResponse = await handleResponse(response);
+    return data.revision;
+  }
 
-    async createItem(item: SubprojectCreate & { project_id: number }): Promise<Subproject> {
-        const response = await fetch(`${API_BASE_URL}/api/projects/${item.project_id}/subprojects/create`, {
-            method: 'POST',
-            headers: createHeaders(),
-            body: JSON.stringify({
-                title: item.title,
-                description: item.description
-            })
-        });
-        const data: SubprojectResponse = await handleResponse(response);
-        return data.subproject;
-    }
+  // POST /api/subprojects/{subproject_id}/revisions/create - create a new revision
+  async createRevision(subprojectId: number, revisionData: RevisionCreate): Promise<Revision> {
+    const response = await fetch(`${API_BASE_URL}/api/subprojects/${subprojectId}/revisions/create`, {
+      method: 'POST',
+      headers: createHeaders(),
+      body: JSON.stringify(revisionData)
+    });
+    const data: RevisionResponse = await handleResponse(response);
+    return data.revision;
+  }
 
-    async updateItem(item: Subproject): Promise<Subproject> {
-        const updateData: SubprojectUpdate = {
-            title: item.title,
-            description: item.description
-        };
-        const response = await fetch(`${API_BASE_URL}/api/subprojects/${item.id}`, {
-            method: 'PUT',
-            headers: createHeaders(),
-            body: JSON.stringify(updateData)
-        });
-        const data: SubprojectResponse = await handleResponse(response);
-        return data.subproject;
-    }
+  // PUT /api/revisions/{revision_id} - update a revision
+  async updateRevision(revisionId: number, revisionData: RevisionUpdate): Promise<Revision> {
+    const response = await fetch(`${API_BASE_URL}/api/revisions/${revisionId}`, {
+      method: 'PUT',
+      headers: createHeaders(),
+      body: JSON.stringify(revisionData)
+    });
+    const data: RevisionResponse = await handleResponse(response);
+    return data.revision;
+  }
 
-    async deleteItem(id: string): Promise<void> {
-        const response = await fetch(`${API_BASE_URL}/api/subprojects/${id}`, {
-            method: 'DELETE',
-            headers: createHeaders()
-        });
-        await handleResponse(response);
-    }
-
-    // Get subprojects for a specific project
-    async getSubprojectsByProject(projectId: number): Promise<Subproject[]> {
-        const response = await fetch(`${API_BASE_URL}/api/projects/${projectId}/subprojects`, {
-            headers: createHeaders()
-        });
-        const data: SubprojectListResponse = await handleResponse(response);
-        return data.subprojects;
-    }
+  // DELETE /api/revisions/{revision_id} - delete a revision
+  async deleteRevision(revisionId: number): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/api/revisions/${revisionId}`, {
+      method: 'DELETE',
+      headers: createHeaders()
+    });
+    await handleResponse(response);
+  }
 }
 
-// Revision Service Implementation
-class ApiRevisionService implements CrudService<Revision> {
-    async getItems(): Promise<Revision[]> {
-        // Get all subprojects first, then get revisions for each
-        const subprojectService = new ApiSubprojectService();
-        const allSubprojects = await subprojectService.getItems();
-        
-        const allRevisions: Revision[] = [];
-        for (const subproject of allSubprojects) {
-            const revisionsResponse = await fetch(`${API_BASE_URL}/api/subprojects/${subproject.id}/revisions`, {
-                headers: createHeaders()
-            });
-            const revisionsData: RevisionListResponse = await handleResponse(revisionsResponse);
-            allRevisions.push(...revisionsData.revisions);
-        }
-        return allRevisions;
-    }
+// File Service - matches OpenAPI specification
+class FileService {
+  // GET /api/files - list files with optional filters
+  async getFiles(offset: number = 0, limit: number = 1000): Promise<File[]> {
+    const response = await fetch(`${API_BASE_URL}/api/files?offset=${offset}&limit=${limit}`, {
+      headers: createHeaders()
+    });
+    const data: FileListResponse = await handleResponse(response);
+    return data.files;
+  }
 
-    async getItem(id: string): Promise<Revision> {
-        const response = await fetch(`${API_BASE_URL}/api/revisions/${id}`, {
-            headers: createHeaders()
-        });
-        const data: RevisionResponse = await handleResponse(response);
-        return data.revision;
-    }
+  // GET /api/files/{file_id}/info - get file information
+  async getFileInfo(fileId: number): Promise<File> {
+    const response = await fetch(`${API_BASE_URL}/api/files/${fileId}/info`, {
+      headers: createHeaders()
+    });
+    const data: FileResponse = await handleResponse(response);
+    return data.file;
+  }
 
-    async createItem(item: RevisionCreate & { subproject_id: number }): Promise<Revision> {
-        const response = await fetch(`${API_BASE_URL}/api/subprojects/${item.subproject_id}/revisions/create`, {
-            method: 'POST',
-            headers: createHeaders(),
-            body: JSON.stringify({
-                revision_number: item.revision_number,
-                title: item.title,
-                description: item.description
-            })
-        });
-        const data: RevisionResponse = await handleResponse(response);
-        return data.revision;
-    }
+  // POST /api/files - create a new file (upload)
+  async uploadFile(fileData: FileUpload, file: Blob): Promise<File> {
+    const formData = new FormData();
+    formData.append('name', fileData.name);
+    formData.append('document_type', fileData.document_type);
+    formData.append('file', file);
+    
+    if (fileData.revision_id) formData.append('revision_id', fileData.revision_id.toString());
+    if (fileData.project_id) formData.append('project_id', fileData.project_id.toString());
+    if (fileData.subproject_id) formData.append('subproject_id', fileData.subproject_id.toString());
 
-    async updateItem(item: Revision): Promise<Revision> {
-        const updateData: RevisionUpdate = {
-            title: item.title,
-            description: item.description
-        };
-        const response = await fetch(`${API_BASE_URL}/api/revisions/${item.id}`, {
-            method: 'PUT',
-            headers: createHeaders(),
-            body: JSON.stringify(updateData)
-        });
-        const data: RevisionResponse = await handleResponse(response);
-        return data.revision;
-    }
+    const response = await fetch(`${API_BASE_URL}/api/files`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${getAuthToken()}`
+      },
+      body: formData
+    });
+    const data: FileResponse = await handleResponse(response);
+    return data.file;
+  }
 
-    async deleteItem(id: string): Promise<void> {
-        const response = await fetch(`${API_BASE_URL}/api/revisions/${id}`, {
-            method: 'DELETE',
-            headers: createHeaders()
-        });
-        await handleResponse(response);
-    }
+  // DELETE /api/files/{file_id} - delete a file
+  async deleteFile(fileId: number): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/api/files/${fileId}`, {
+      method: 'DELETE',
+      headers: createHeaders()
+    });
+    await handleResponse(response);
+  }
 
-    // Get revisions for a specific subproject
-    async getRevisionsBySubproject(subprojectId: number): Promise<Revision[]> {
-        const response = await fetch(`${API_BASE_URL}/api/subprojects/${subprojectId}/revisions`, {
-            headers: createHeaders()
-        });
-        const data: RevisionListResponse = await handleResponse(response);
-        return data.revisions;
-    }
+  // GET /api/files/{file_id}/download - get file download url
+  async getDownloadUrl(fileId: number): Promise<DownloadUrlResponse> {
+    const response = await fetch(`${API_BASE_URL}/api/files/${fileId}/download`, {
+      headers: createHeaders()
+    });
+    return handleResponse(response);
+  }
+
+  // GET /api/document-types - get list of available document types
+  async getDocumentTypes(): Promise<{ type: string }[]> {
+    const response = await fetch(`${API_BASE_URL}/api/document-types`, {
+      headers: createHeaders()
+    });
+    const data: { document_types: { type: string }[] } = await handleResponse(response);
+    return data.document_types;
+  }
 }
 
-// File Service Implementation
-class ApiFileService implements CrudService<File> {
-    async getItems(): Promise<File[]> {
-        const response = await fetch(`${API_BASE_URL}/api/files`, {
-            headers: createHeaders()
-        });
-        const data: FileListResponse = await handleResponse(response);
-        return data.files;
-    }
-
-    async getItem(id: string): Promise<File> {
-        const response = await fetch(`${API_BASE_URL}/api/files/${id}/info`, {
-            headers: createHeaders()
-        });
-        const data: FileResponse = await handleResponse(response);
-        return data.file;
-    }
-
-    async createItem(item: FileUpload): Promise<File> {
-        const formData = new FormData();
-        formData.append('name', item.name);
-        formData.append('document_type', item.document_type);
-        if (item.revision_id) formData.append('revision_id', item.revision_id.toString());
-        if (item.project_id) formData.append('project_id', item.project_id.toString());
-        if (item.subproject_id) formData.append('subproject_id', item.subproject_id.toString());
-
-        const response = await fetch(`${API_BASE_URL}/api/files`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${getAuthToken()}`
-            },
-            body: formData
-        });
-        const data: FileResponse = await handleResponse(response);
-        return data.file;
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    async updateItem(_item: File): Promise<File> {
-        // Note: The API doesn't seem to have an update endpoint for files
-        // This might need to be implemented differently or removed
-        throw new Error('File update not supported by the API');
-    }
-
-    async deleteItem(id: string): Promise<void> {
-        const response = await fetch(`${API_BASE_URL}/api/files/${id}`, {
-            method: 'DELETE',
-            headers: createHeaders()
-        });
-        await handleResponse(response);
-    }
-
-    // Get download URL for a file
-    async getDownloadUrl(fileId: number): Promise<DownloadUrlResponse> {
-        const response = await fetch(`${API_BASE_URL}/api/files/${fileId}/download`, {
-            headers: createHeaders()
-        });
-        return handleResponse(response);
-    }
+// Diff Service - matches OpenAPI specification
+class DiffService {
+  // POST /api/diff - create a diff between two documents
+  async createDiff(diffData: {
+    name: string;
+    doc_id_left: number;
+    doc_id_right: number;
+    target_revision_id?: number;
+    target_subproject_id?: number;
+    target_project_id?: number;
+  }): Promise<File> {
+    const response = await fetch(`${API_BASE_URL}/api/diff`, {
+      method: 'POST',
+      headers: createHeaders(),
+      body: JSON.stringify(diffData)
+    });
+    const data: { file: File } = await handleResponse(response);
+    return data.file;
+  }
 }
 
 // Service instances
-export const projectService: ApiProjectService = new ApiProjectService();
-export const subprojectService: ApiSubprojectService = new ApiSubprojectService();
-export const revisionService: ApiRevisionService = new ApiRevisionService();
-export const fileService: ApiFileService = new ApiFileService();
+export const projectService = new ProjectService();
+export const subprojectService = new SubprojectService();
+export const revisionService = new RevisionService();
+export const fileService = new FileService();
+export const diffService = new DiffService();
 
 // Export types for convenience
 export type { Project, ProjectCreate, ProjectUpdate } from "../types/project";

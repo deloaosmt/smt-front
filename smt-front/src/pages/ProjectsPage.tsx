@@ -6,6 +6,7 @@ import DataCard from '../components/DataCard';
 import type { Project } from '../types/project';
 import { projectService } from '../api/Services';
 import { CircularLoader } from '../components/CircularLoader';
+import Button from '@mui/joy/Button';
 
 const ProjectsPage = () => {
   const navigate = useNavigate();
@@ -19,13 +20,13 @@ const ProjectsPage = () => {
   const handleCreateProject = async (formData: Record<string, string>) => {
     console.log('Creating project with data:', formData);
     try {
-      const newProject = await projectService.createItem({
+      const newProject = await projectService.createProject({
         title: formData.title,
         description: formData.description || null
       });
       console.log('Project created:', newProject);
       // Refresh the projects list
-      const updatedProjects = await projectService.getItems();
+      const updatedProjects = await projectService.getProjects();
       setProjects(updatedProjects);
     } catch (error) {
       console.error('Error creating project:', error);
@@ -36,8 +37,19 @@ const ProjectsPage = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    projectService.getItems().then(setProjects).then(() => setIsLoading(false));
+    projectService.getProjects().then(setProjects).then(() => setIsLoading(false));
   }, []);
+
+  const handleDeleteProject = async (project: Project) => {
+    console.log('Deleting project:', project.id);
+    try {
+      await projectService.deleteProject(project.id);
+      const updatedProjects = await projectService.getProjects();
+      setProjects(updatedProjects);
+    } catch (error) {
+      console.error('Error deleting project:', error);
+    }
+  };
 
   return (
     <>
@@ -48,10 +60,14 @@ const ProjectsPage = () => {
           title="Проекты"
           items={projects}
           renderCard={(project) => (
-            <DataCard
-              item={project}
-              onForwardClick={() => handleProjectClick(project)}
-            />
+            <DataCard title={project.title} >
+              <Button variant="outlined" color="danger" size="sm" onClick={() => handleDeleteProject(project)}>
+                Удалить 
+              </Button>
+              <Button variant="outlined" color="neutral" size="sm" onClick={() => handleProjectClick(project)}>
+                Открыть
+              </Button>
+            </DataCard>
           )}
           onCreateItem={handleCreateProject}
           createModalTitle="Создать проект"

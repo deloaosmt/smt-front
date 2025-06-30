@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import {
   Box,
   Button,
-  Container,
   DialogContent,
   DialogTitle,
   FormControl,
@@ -13,13 +12,10 @@ import {
   ModalDialog,
   Stack,
   Typography,
-  Breadcrumbs,
-  Link,
   Select,
   Option,
   IconButton
 } from '@mui/joy';
-import { useNavigate } from 'react-router';
 import SearchIcon from '@mui/icons-material/Search';
 import Pagination from './Pagination';
 import CloseRounded from '@mui/icons-material/CloseRounded';
@@ -27,39 +23,27 @@ import CloseRounded from '@mui/icons-material/CloseRounded';
 interface SearchProps {
   searchOptions: Array<{ label: string, values: string[] }>
   onChange: (searchFields: Array<string | null>) => void
-  initialValues?: Array<string | null>
+  searchValues: Array<string | null>
 }
 
-function SearchBar(searchConfig: SearchProps) {
-  const [searchFields, setSearchFields] = useState<Array<string | null>>(
-    searchConfig.initialValues || []
-  );
-
-  // Update search fields when initialValues change
-  useEffect(() => {
-    if (searchConfig.initialValues) {
-      setSearchFields(searchConfig.initialValues);
-    }
-  }, [searchConfig.initialValues]);
-
+function SearchBar({ onChange, searchOptions, searchValues }: SearchProps) {
   const handleSearchChange = (index: number, value: string | null) => {
-    const newSearchFields = [...searchFields];
+    const newSearchFields = [...searchValues];
     newSearchFields[index] = value;
-    setSearchFields(newSearchFields);
-    searchConfig.onChange(newSearchFields);
+    onChange(newSearchFields);
   };
 
   return (
     <Stack direction="row" spacing={2} alignItems="center">
       <SearchIcon />
-      {searchConfig.searchOptions.map((option, index) => (
+      {searchOptions.map((option, index) => (
         <Select
           key={option.label}
           placeholder={option.label}
-          value={searchFields[index] || ''}
+          value={searchValues[index] || ''}
           onChange={(_, value) => handleSearchChange(index, value as string | null)}
           sx={{ minWidth: 150 }}
-          {...(searchFields[index] && {
+          {...(searchValues[index] && {
             // display the button and remove select indicator
             // when user has selected a value
             endDecorator: (
@@ -127,7 +111,6 @@ const DataGrid = <T extends { id: string | number }>({
   formFields,
   emptyStateTitle,
   emptyStateDescription,
-  breadcrumbs = [],
   filterFunction,
   filterParams = {},
   searchConfig,
@@ -135,16 +118,14 @@ const DataGrid = <T extends { id: string | number }>({
   const [currentPage, setCurrentPage] = useState(1);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [formData, setFormData] = useState<Record<string, string>>({});
-  const [searchFields, setSearchFields] = useState<Array<string | null>>([]);
-  const navigate = useNavigate();
 
   // Apply filtering if filterFunction is provided
   const filteredItems = filterFunction ? filterFunction(items, filterParams) : items;
 
   // Apply search filtering based on selected search fields
-  const searchFilteredItems = searchConfig && searchFields.some(field => field !== null) ?
+  const searchFilteredItems = searchConfig && searchConfig.searchValues.some(field => field !== null) ?
     filteredItems.filter(item => {
-      return searchFields.every((searchValue, index) => {
+      return searchConfig.searchValues.every((searchValue, index) => {
         if (!searchValue) return true; // Skip empty search fields
 
         const searchOption = searchConfig.searchOptions[index];
@@ -155,22 +136,22 @@ const DataGrid = <T extends { id: string | number }>({
         switch (searchOption.label.toLowerCase()) {
           case 'document type':
           case 'тип документа': {
-            itemValue = (item as Record<string, unknown>).documentType;
+            itemValue = (item as Record<string, unknown>).document_type;
             break;
           }
           case 'project':
           case 'проект': {
-            itemValue = (item as Record<string, unknown>).projectId;
+            itemValue = (item as Record<string, unknown>).project_id;
             break;
           }
           case 'subproject':
           case 'подпроект': {
-            itemValue = (item as Record<string, unknown>).subprojectId;
+            itemValue = (item as Record<string, unknown>).subproject_id;
             break;
           }
           case 'revision':
           case 'ревизия': {
-            itemValue = (item as Record<string, unknown>).revisionId;
+            itemValue = (item as Record<string, unknown>).revision_id;
             break;
           }
           default: {
@@ -180,7 +161,11 @@ const DataGrid = <T extends { id: string | number }>({
           }
         }
 
-        return itemValue && itemValue.toString().toLowerCase() === searchValue.toLowerCase();
+        // Convert both values to strings for comparison, handling null/undefined
+        const searchValueStr = searchValue?.toString() || '';
+        const itemValueStr = itemValue?.toString() || '';
+        
+        return itemValueStr === searchValueStr;
       });
     }) : filteredItems;
 
@@ -215,10 +200,6 @@ const DataGrid = <T extends { id: string | number }>({
     }));
   };
 
-  const handleSearchChange = (newSearchFields: Array<string | null>) => {
-    setSearchFields(newSearchFields);
-  };
-
   const createModal = (
     <Modal open={createModalOpen} onClose={() => setCreateModalOpen(false)}>
       <ModalDialog>
@@ -247,38 +228,11 @@ const DataGrid = <T extends { id: string | number }>({
   return (
     <Box sx={{ minHeight: '100vh', backgroundColor: 'background.body' }}>
       {/* Main content with left margin to account for sidebar */}
-      <Box sx={{ ml: '280px', p: 4 }}>
-        <Container maxWidth="xl" sx={{ p: 0 }}>
-          {/* Breadcrumbs */}
-          {breadcrumbs.length > 0 && (
-            <Box sx={{ mb: 2 }}>
-              <Breadcrumbs>
-                {breadcrumbs.map((crumb, index) => (
-                  <Link
-                    key={index}
-                    color={index === breadcrumbs.length - 1 ? 'primary' : 'neutral'}
-                    href={crumb.path}
-                    onClick={(e: React.MouseEvent) => {
-                      if (crumb.path) {
-                        e.preventDefault();
-                        navigate(crumb.path);
-                      }
-                    }}
-                    sx={{
-                      textDecoration: 'none',
-                      cursor: crumb.path ? 'pointer' : 'default'
-                    }}
-                  >
-                    {crumb.label}
-                  </Link>
-                ))}
-              </Breadcrumbs>
-            </Box>
-          )}
+      <Box sx={{ ml: '280px', p: 4 , width: '70%'}}>
 
           {/* Header */}
-          <Box sx={{ mb: 4 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Box sx={{ mb: 4 , width: '100%'}}>
+            <Stack direction="row" spacing={2} sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
               <Typography level="h2" sx={{ fontWeight: 'bold' }}>
                 {title}
               </Typography>
@@ -290,15 +244,15 @@ const DataGrid = <T extends { id: string | number }>({
               >
                 {createButtonText}
               </Button>
-            </Box>
+            </Stack>
 
             {/* Search Bar */}
             <Box sx={{ mb: 3 }}>
               {searchConfig && (
                 <SearchBar
                   searchOptions={searchConfig.searchOptions}
-                  onChange={handleSearchChange}
-                  initialValues={searchConfig.initialValues}
+                  onChange={searchConfig.onChange}
+                  searchValues={searchConfig.searchValues}
                 />
               )}
             </Box>
@@ -326,10 +280,10 @@ const DataGrid = <T extends { id: string | number }>({
               }}
             >
               <Typography level="h4" sx={{ mb: 2 }}>
-                {searchFields.some(field => field !== null) ? 'No results found' : emptyStateTitle}
+                {searchConfig?.searchValues.some(field => field !== null) ? 'No results found' : emptyStateTitle}
               </Typography>
               <Typography level="body-md" sx={{ mb: 3 }}>
-                {searchFields.some(field => field !== null)
+                {searchConfig?.searchValues.some(field => field !== null)
                   ? `No items match your selected filters`
                   : emptyStateDescription
                 }
@@ -347,7 +301,6 @@ const DataGrid = <T extends { id: string | number }>({
               itemsPerPage={itemsPerPage}
             />
           )}
-        </Container>
       </Box>
     </Box>
   );

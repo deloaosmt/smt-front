@@ -7,6 +7,7 @@ import type { Subproject } from '../types/subpoject';
 import type { Project } from '../types/project';
 import { projectService, subprojectService } from '../api/Services';
 import { CircularLoader } from '../components/CircularLoader';
+import { Button } from '@mui/joy';
 
 const SubprojectsPage = () => {
   const navigate = useNavigate();
@@ -20,20 +21,23 @@ const SubprojectsPage = () => {
       try {
         if (projectId) {
           // Load subprojects for specific project
-          const projectSubprojects = await subprojectService.getSubprojectsByProject(parseInt(projectId));
+          const projectSubprojects = await subprojectService.getSubprojects(parseInt(projectId));
           setSubprojects(projectSubprojects);
-          
+
           // Load project info
-          const project = await projectService.getItem(projectId);
+          const project = await projectService.getProject(parseInt(projectId));
           setProjects([project]);
         } else {
-          // Load all subprojects
-          const allSubprojects = await subprojectService.getItems();
-          setSubprojects(allSubprojects);
-          
-          // Load all projects for reference
-          const allProjects = await projectService.getItems();
+          // Load all projects first, then get subprojects for each
+          const allProjects = await projectService.getProjects();
           setProjects(allProjects);
+          
+          const allSubprojects: Subproject[] = [];
+          for (const project of allProjects) {
+            const projectSubprojects = await subprojectService.getSubprojects(project.id);
+            allSubprojects.push(...projectSubprojects);
+          }
+          setSubprojects(allSubprojects);
         }
       } catch (error) {
         console.error('Error loading data:', error);
@@ -41,7 +45,7 @@ const SubprojectsPage = () => {
         setIsLoading(false);
       }
     };
-    
+
     loadData();
   }, [projectId]);
 
@@ -57,15 +61,14 @@ const SubprojectsPage = () => {
       if (!projectId) {
         throw new Error('Project ID is required to create a subproject');
       }
-      
-      const newSubproject = await subprojectService.createItem({
+
+      const newSubproject = await subprojectService.createSubproject(parseInt(projectId), {
         title: formData.title,
-        description: formData.description || null,
-        project_id: parseInt(projectId)
+        description: formData.description || null
       });
       console.log('Subproject created:', newSubproject);
       // Refresh the subprojects list
-      const updatedSubprojects = await subprojectService.getSubprojectsByProject(parseInt(projectId));
+      const updatedSubprojects = await subprojectService.getSubprojects(parseInt(projectId));
       setSubprojects(updatedSubprojects);
     } catch (error) {
       console.error('Error creating subproject:', error);
@@ -88,6 +91,28 @@ const SubprojectsPage = () => {
     return project?.title || '';
   };
 
+  const handleDeleteSubproject = async (subproject: Subproject) => {
+    console.log('Deleting subproject:', subproject.id);
+    try {
+      await subprojectService.deleteSubproject(subproject.id);
+      if (projectId) {
+        const updatedSubprojects = await subprojectService.getSubprojects(parseInt(projectId));
+        setSubprojects(updatedSubprojects);
+      } else {
+        // Refresh all subprojects
+        const allProjects = await projectService.getProjects();
+        const allSubprojects: Subproject[] = [];
+        for (const project of allProjects) {
+          const projectSubprojects = await subprojectService.getSubprojects(project.id);
+          allSubprojects.push(...projectSubprojects);
+        }
+        setSubprojects(allSubprojects);
+      }
+    } catch (error) {
+      console.error('Error deleting subproject:', error);
+    }
+  };
+
   return (
     <>
       <Navigation />
@@ -98,9 +123,15 @@ const SubprojectsPage = () => {
           items={subprojects}
           renderCard={(subproject) => (
             <DataCard
-              item={subproject}
-              onForwardClick={() => handleSubprojectClick(subproject)}
-            />
+              title={subproject.title}
+            >
+              <Button variant="outlined" color="danger" size="sm" onClick={() => handleDeleteSubproject(subproject)}>
+                Удалить
+              </Button>
+              <Button variant="outlined" color="neutral" size="sm" onClick={() => handleSubprojectClick(subproject)}>
+                Открыть
+              </Button>
+            </DataCard>
           )}
           onCreateItem={handleCreateSubproject}
           createModalTitle="Создать подпроект"

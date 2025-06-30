@@ -9,7 +9,7 @@ const Navigation = () => {
   const { user, logout } = useAuth();
 
   const handleLogout = async () => {
-    await logout();
+    logout();
     navigate('/login');
   };
 
