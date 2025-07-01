@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import Navigation from '../components/Navigation';
 import DataGrid from '../components/DataGrid';
@@ -7,49 +7,102 @@ import type { Project } from '../types/project';
 import { projectService } from '../api/Services';
 import { CircularLoader } from '../components/CircularLoader';
 import Button from '@mui/joy/Button';
+import { DialogContent, DialogTitle, FormControl, FormLabel, Input, Modal, ModalDialog, Stack } from '@mui/joy';
 
 const ProjectsPage = () => {
   const navigate = useNavigate();
 
-  const handleProjectClick = (project: Project) => {
-    console.log('Project clicked:', project.id);
-    // Navigate to project-specific subprojects page
-    navigate(`/projects/${project.id}/subprojects`);
-  };
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleCreateProject = async (formData: Record<string, string>) => {
-    console.log('Creating project with data:', formData);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+
+  const [deleteModalOpen, setDeleteModalOpen] = useState<Project | null>(null);
+
+  const loadData = useCallback(async () => {
+    setIsLoading(true);
     try {
-      const newProject = await projectService.createProject({
-        title: formData.title,
-        description: formData.description || null
+      const allProjects = await projectService.getProjects();
+      setProjects(allProjects);
+    } catch (error) {
+      console.error('Error loading projects:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const handleCreateProject = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.target as HTMLFormElement);
+    const title = formData.get('title') as string;
+    const description = formData.get('description') as string;
+
+    try {
+      await projectService.createProject({
+        title: title,
+        description: description || null
       });
-      console.log('Project created:', newProject);
-      // Refresh the projects list
-      const updatedProjects = await projectService.getProjects();
-      setProjects(updatedProjects);
+      setCreateModalOpen(false);
+      await loadData();
     } catch (error) {
       console.error('Error creating project:', error);
     }
   };
 
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    projectService.getProjects().then(setProjects).then(() => setIsLoading(false));
-  }, []);
-
   const handleDeleteProject = async (project: Project) => {
-    console.log('Deleting project:', project.id);
     try {
       await projectService.deleteProject(project.id);
-      const updatedProjects = await projectService.getProjects();
-      setProjects(updatedProjects);
+      setDeleteModalOpen(null);
+      await loadData();
     } catch (error) {
       console.error('Error deleting project:', error);
     }
   };
+
+  const deleteModal = (
+    <Modal open={deleteModalOpen !== null} onClose={() => setDeleteModalOpen(null)}>
+      <ModalDialog>
+        <DialogTitle>Удалить проект</DialogTitle>
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <p>Вы уверены, что хотите удалить проект {deleteModalOpen?.title}?</p>
+          <Stack direction="row" spacing={2} justifyContent="space-around">
+            <Button variant="outlined" color="danger" onClick={() => handleDeleteProject(deleteModalOpen!)}>
+              Удалить
+            </Button>
+            <Button variant="outlined" color="neutral" onClick={() => setDeleteModalOpen(null)}>
+              Отмена
+            </Button>
+          </Stack>
+        </DialogContent>
+      </ModalDialog>
+    </Modal>
+  );
+
+  const createModal = (
+    <Modal open={createModalOpen} onClose={() => setCreateModalOpen(false)}>
+      <ModalDialog>
+        <DialogTitle>Создать проект</DialogTitle>
+        <DialogContent>Заполните информацию о проекте.</DialogContent>
+        <form onSubmit={handleCreateProject}>
+          <Stack spacing={2}>
+            <FormControl>
+              <FormLabel>Название проекта</FormLabel>
+              <Input required name="title" />
+            </FormControl>
+            <FormControl>
+              <FormLabel>Описание проекта</FormLabel>
+              <Input name="description" />
+            </FormControl>
+            <Button type="submit">Создать проект</Button>
+          </Stack>
+        </form>
+      </ModalDialog>
+    </Modal>
+  );
 
   return (
     <>
@@ -61,26 +114,21 @@ const ProjectsPage = () => {
           items={projects}
           renderCard={(project) => (
             <DataCard title={project.title} >
-              <Button variant="outlined" color="danger" size="sm" onClick={() => handleDeleteProject(project)}>
-                Удалить 
+              <Button variant="outlined" color="danger" size="sm" onClick={() => setDeleteModalOpen(project)}>
+                Удалить
               </Button>
-              <Button variant="outlined" color="neutral" size="sm" onClick={() => handleProjectClick(project)}>
+              <Button variant="outlined" color="neutral" size="sm" onClick={() => navigate(`/projects/${project.id}/subprojects`)}>
                 Открыть
               </Button>
             </DataCard>
           )}
-          onCreateItem={handleCreateProject}
-          createModalTitle="Создать проект"
-          createModalDescription="Заполните информацию о проекте."
-          createButtonText="Создать проект"
-          formFields={[
-            { name: 'title', label: 'Название проекта', required: true },
-            { name: 'description', label: 'Описание проекта', required: false }
-          ]}
+          onCreateItem={() => setCreateModalOpen(true)}
           emptyStateTitle="Нет проектов"
           emptyStateDescription="Создайте свой первый проект для начала"
         />
       }
+      {createModal}
+      {deleteModal}
     </>
   );
 };

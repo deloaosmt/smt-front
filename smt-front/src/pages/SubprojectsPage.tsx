@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import Navigation from '../components/Navigation';
 import DataGrid from '../components/DataGrid';
@@ -7,7 +7,7 @@ import type { Subproject } from '../types/subpoject';
 import type { Project } from '../types/project';
 import { projectService, subprojectService } from '../api/Services';
 import { CircularLoader } from '../components/CircularLoader';
-import { Button } from '@mui/joy';
+import { Button, DialogContent, DialogTitle, FormControl, FormLabel, Input, Modal, ModalDialog, Option, Select, Stack } from '@mui/joy';
 
 const SubprojectsPage = () => {
   const navigate = useNavigate();
@@ -15,103 +15,123 @@ const SubprojectsPage = () => {
   const [subprojects, setSubprojects] = useState<Subproject[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentProject, setCurrentProject] = useState<Project | null>(null);
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        if (projectId) {
-          // Load subprojects for specific project
-          const projectSubprojects = await subprojectService.getSubprojects(parseInt(projectId));
-          setSubprojects(projectSubprojects);
+  const loadData = useCallback(async () => {
+    setIsLoading(true);
+    if (projectId) {
+      const project = await projectService.getProject(parseInt(projectId));
+      const projectSubprojects = await subprojectService.getSubprojects(parseInt(projectId));
+      setCurrentProject(project);
+      setSubprojects(projectSubprojects);
+    } else {
+      setCurrentProject(null);
+      const allProjects = await projectService.getProjects();
+      setProjects(allProjects);
 
-          // Load project info
-          const project = await projectService.getProject(parseInt(projectId));
-          setProjects([project]);
-        } else {
-          // Load all projects first, then get subprojects for each
-          const allProjects = await projectService.getProjects();
-          setProjects(allProjects);
-          
-          const allSubprojects: Subproject[] = [];
-          for (const project of allProjects) {
-            const projectSubprojects = await subprojectService.getSubprojects(project.id);
-            allSubprojects.push(...projectSubprojects);
-          }
-          setSubprojects(allSubprojects);
-        }
-      } catch (error) {
-        console.error('Error loading data:', error);
-      } finally {
-        setIsLoading(false);
+      const allSubprojects: Subproject[] = [];
+      for (const project of allProjects) {
+        const projectSubprojects = await subprojectService.getSubprojects(project.id);
+        allSubprojects.push(...projectSubprojects);
       }
-    };
-
-    loadData();
+      setSubprojects(allSubprojects);
+    }
+    setIsLoading(false);
   }, [projectId]);
 
-  const handleSubprojectClick = (subproject: Subproject) => {
-    console.log('Subproject clicked:', subproject.id);
-    // Navigate to subproject-specific revisions page
-    navigate(`/subprojects/${subproject.id}/revisions`);
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const handleCreateSubproject = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.target as HTMLFormElement);
+    const title = formData.get('title') as string;
+    const description = formData.get('description') as string;
+    const targetProjectId = projectId || formData.get('projectId') as string;
+
+    await subprojectService.createSubproject(parseInt(targetProjectId), {
+      title: title,
+      description: description || null
+    });
+
+    setCreateModalOpen(false);
+    await loadData();
   };
 
-  const handleCreateSubproject = async (formData: Record<string, string>) => {
-    console.log('Creating subproject with data:', formData);
-    try {
-      if (!projectId) {
-        throw new Error('Project ID is required to create a subproject');
-      }
-
-      const newSubproject = await subprojectService.createSubproject(parseInt(projectId), {
-        title: formData.title,
-        description: formData.description || null
-      });
-      console.log('Subproject created:', newSubproject);
-      // Refresh the subprojects list
-      const updatedSubprojects = await subprojectService.getSubprojects(parseInt(projectId));
-      setSubprojects(updatedSubprojects);
-    } catch (error) {
-      console.error('Error creating subproject:', error);
-    }
-  };
-
-  // Filter subprojects by project if projectId is provided
   const filterSubprojectsByProject = (subprojects: Subproject[], params: Record<string, unknown>) => {
     const projectId = params.projectId as string;
     if (!projectId) return subprojects;
 
-    // Filter by actual project_id relationship
     return subprojects.filter(subproject => subproject.project_id.toString() === projectId);
-  };
-
-  // Get project title for the page title
-  const getProjectTitle = () => {
-    if (!projectId) return '';
-    const project = projects.find(p => p.id.toString() === projectId);
-    return project?.title || '';
   };
 
   const handleDeleteSubproject = async (subproject: Subproject) => {
     console.log('Deleting subproject:', subproject.id);
     try {
       await subprojectService.deleteSubproject(subproject.id);
-      if (projectId) {
-        const updatedSubprojects = await subprojectService.getSubprojects(parseInt(projectId));
-        setSubprojects(updatedSubprojects);
-      } else {
-        // Refresh all subprojects
-        const allProjects = await projectService.getProjects();
-        const allSubprojects: Subproject[] = [];
-        for (const project of allProjects) {
-          const projectSubprojects = await subprojectService.getSubprojects(project.id);
-          allSubprojects.push(...projectSubprojects);
-        }
-        setSubprojects(allSubprojects);
-      }
+      await loadData();
     } catch (error) {
       console.error('Error deleting subproject:', error);
     }
+    setDeleteModalOpen(null);
   };
+
+  const [deleteModalOpen, setDeleteModalOpen] = useState<Subproject | null>(null);
+
+  const deleteModal = (
+    <Modal open={deleteModalOpen !== null} onClose={() => setDeleteModalOpen(null)}>
+      <ModalDialog>
+        <DialogTitle>Удалить подпроект</DialogTitle>
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <p>Вы уверены, что хотите удалить подпроект {deleteModalOpen?.title}?</p>
+          <Stack direction="row" spacing={2} justifyContent="space-around">
+            <Button variant="outlined" color="danger" onClick={() => handleDeleteSubproject(deleteModalOpen!)}>
+              Удалить
+            </Button>
+            <Button variant="outlined" color="neutral" onClick={() => setDeleteModalOpen(null)}>
+              Отмена
+            </Button>
+          </Stack>
+        </DialogContent>
+      </ModalDialog>
+    </Modal>
+  );
+
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+
+  const createModal = (
+    <Modal open={createModalOpen} onClose={() => setCreateModalOpen(false)}>
+      <ModalDialog>
+        <DialogTitle>Создать подпроект</DialogTitle>
+        <DialogContent>Заполните информацию о подпроекте.</DialogContent>
+        <form onSubmit={handleCreateSubproject}>
+          <Stack spacing={2}>
+            <FormControl>
+              <FormLabel>Название подпроекта</FormLabel>
+              <Input required name="title" />
+            </FormControl>
+            <FormControl>
+              <FormLabel>Описание подпроекта</FormLabel>
+              <Input name="description" />
+            </FormControl>
+            <FormControl>
+              <FormLabel>Проект</FormLabel>
+              <Select name="projectId" required defaultValue={projectId} value={projectId}>
+                {projectId && currentProject
+                  ? <Option value={currentProject.id}>{currentProject.title}</Option>
+                  : projects.map(project => (
+                    <Option value={project.id}>{project.title}</Option>
+                  ))
+                }
+              </Select>
+            </FormControl>
+            <Button type="submit">Создать подпроект</Button>
+          </Stack>
+        </form>
+      </ModalDialog>
+    </Modal>
+  );
 
   return (
     <>
@@ -119,28 +139,21 @@ const SubprojectsPage = () => {
       {isLoading && <CircularLoader />}
       {!isLoading &&
         <DataGrid<Subproject>
-          title={projectId ? `Подпроекты проекта "${getProjectTitle()}"` : 'Подпроекты'}
+          title={currentProject ? `Подпроекты проекта "${currentProject.title}"` : 'Подпроекты'}
           items={subprojects}
           renderCard={(subproject) => (
             <DataCard
               title={subproject.title}
             >
-              <Button variant="outlined" color="danger" size="sm" onClick={() => handleDeleteSubproject(subproject)}>
+              <Button variant="outlined" color="danger" size="sm" onClick={() => setDeleteModalOpen(subproject)}>
                 Удалить
               </Button>
-              <Button variant="outlined" color="neutral" size="sm" onClick={() => handleSubprojectClick(subproject)}>
+              <Button variant="outlined" color="neutral" size="sm" onClick={() => navigate(`/subprojects/${subproject.id}/revisions`)}>
                 Открыть
               </Button>
             </DataCard>
           )}
-          onCreateItem={handleCreateSubproject}
-          createModalTitle="Создать подпроект"
-          createModalDescription="Заполните информацию о подпроекте."
-          createButtonText="Создать подпроект"
-          formFields={[
-            { name: 'title', label: 'Название подпроекта', required: true },
-            { name: 'description', label: 'Описание подпроекта', required: false }
-          ]}
+          onCreateItem={() => setCreateModalOpen(true)}
           emptyStateTitle="Нет подпроектов"
           emptyStateDescription={projectId
             ? "В этом проекте пока нет подпроектов"
@@ -150,6 +163,8 @@ const SubprojectsPage = () => {
           filterParams={projectId ? { projectId } : {}}
         />
       }
+      {deleteModal}
+      {createModal}
     </>
   );
 };

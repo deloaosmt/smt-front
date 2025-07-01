@@ -79,21 +79,11 @@ interface DataGridProps<T> {
   items: T[];
   itemsPerPage?: number;
   renderCard: (item: T) => React.ReactNode;
-  onCreateItem: (formData: Record<string, string>) => void;
-  createModalTitle: string;
-  createModalDescription: string;
-  createButtonText: string;
-  formFields: {
-    name: string;
-    label: string;
-    required?: boolean;
-  }[];
+  onCreateItem: () => void;
+
   emptyStateTitle: string;
   emptyStateDescription: string;
-  breadcrumbs?: Array<{
-    label: string;
-    path?: string;
-  }>;
+
   filterFunction?: (items: T[], filterParams: Record<string, unknown>) => T[];
   filterParams?: Record<string, unknown>;
   searchConfig?: SearchProps;
@@ -105,10 +95,6 @@ const DataGrid = <T extends { id: string | number }>({
   itemsPerPage = 8,
   renderCard,
   onCreateItem,
-  createModalTitle,
-  createModalDescription,
-  createButtonText,
-  formFields,
   emptyStateTitle,
   emptyStateDescription,
   filterFunction,
@@ -116,8 +102,6 @@ const DataGrid = <T extends { id: string | number }>({
   searchConfig,
 }: DataGridProps<T>) => {
   const [currentPage, setCurrentPage] = useState(1);
-  const [createModalOpen, setCreateModalOpen] = useState(false);
-  const [formData, setFormData] = useState<Record<string, string>>({});
 
   // Apply filtering if filterFunction is provided
   const filteredItems = filterFunction ? filterFunction(items, filterParams) : items;
@@ -164,7 +148,7 @@ const DataGrid = <T extends { id: string | number }>({
         // Convert both values to strings for comparison, handling null/undefined
         const searchValueStr = searchValue?.toString() || '';
         const itemValueStr = itemValue?.toString() || '';
-        
+
         return itemValueStr === searchValueStr;
       });
     }) : filteredItems;
@@ -186,121 +170,80 @@ const DataGrid = <T extends { id: string | number }>({
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleCreateSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    onCreateItem(formData);
-    setCreateModalOpen(false);
-    setFormData({});
-  };
-
-  const handleInputChange = (fieldName: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [fieldName]: value
-    }));
-  };
-
-  const createModal = (
-    <Modal open={createModalOpen} onClose={() => setCreateModalOpen(false)}>
-      <ModalDialog>
-        <DialogTitle>{createModalTitle}</DialogTitle>
-        <DialogContent>{createModalDescription}</DialogContent>
-        <form onSubmit={handleCreateSubmit}>
-          <Stack spacing={2}>
-            {formFields.map((field) => (
-              <FormControl key={field.name}>
-                <FormLabel>{field.label}</FormLabel>
-                <Input
-                  autoFocus={field.name === formFields[0].name}
-                  required={field.required !== false}
-                  value={formData[field.name] || ''}
-                  onChange={(e) => handleInputChange(field.name, e.target.value)}
-                />
-              </FormControl>
-            ))}
-            <Button type="submit">{createButtonText}</Button>
-          </Stack>
-        </form>
-      </ModalDialog>
-    </Modal>
-  );
-
   return (
     <Box sx={{ minHeight: '100vh', backgroundColor: 'background.body' }}>
       {/* Main content with left margin to account for sidebar */}
-      <Box sx={{ ml: '280px', p: 4 , width: '70%'}}>
+      <Box sx={{ ml: '280px', p: 4, width: '70%' }}>
 
-          {/* Header */}
-          <Box sx={{ mb: 4 , width: '100%'}}>
-            <Stack direction="row" spacing={2} sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-              <Typography level="h2" sx={{ fontWeight: 'bold' }}>
-                {title}
-              </Typography>
-              <Button
-                variant="solid"
-                color="primary"
-                size="lg"
-                onClick={() => setCreateModalOpen(true)}
-              >
-                {createButtonText}
-              </Button>
-            </Stack>
+        {/* Header */}
+        <Box sx={{ mb: 4, width: '100%' }}>
+          <Stack direction="row" spacing={2} sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+            <Typography level="h2" sx={{ fontWeight: 'bold' }}>
+              {title}
+            </Typography>
+            <Button
+              variant="solid"
+              color="primary"
+              size="lg"
+              onClick={onCreateItem}
+            >
+              Создать
+            </Button>
+          </Stack>
 
-            {/* Search Bar */}
-            <Box sx={{ mb: 3 }}>
-              {searchConfig && (
-                <SearchBar
-                  searchOptions={searchConfig.searchOptions}
-                  onChange={searchConfig.onChange}
-                  searchValues={searchConfig.searchValues}
-                />
-              )}
-            </Box>
-
-            {/* Create Modal */}
-            {createModal}
+          {/* Search Bar */}
+          <Box sx={{ mb: 3 }}>
+            {searchConfig && (
+              <SearchBar
+                searchOptions={searchConfig.searchOptions}
+                onChange={searchConfig.onChange}
+                searchValues={searchConfig.searchValues}
+              />
+            )}
           </Box>
 
-          {/* Items Grid */}
-          <Grid container spacing={3}>
-            {currentItems.map((item) => (
-              <Grid xs={12} md={6} key={item.id}>
-                {renderCard(item)}
-              </Grid>
-            ))}
-          </Grid>
+        </Box>
 
-          {/* Empty state (if no items) */}
-          {searchFilteredItems.length === 0 && (
-            <Box
-              sx={{
-                textAlign: 'center',
-                py: 8,
-                color: 'text.secondary',
-              }}
-            >
-              <Typography level="h4" sx={{ mb: 2 }}>
-                {searchConfig?.searchValues.some(field => field !== null) ? 'No results found' : emptyStateTitle}
-              </Typography>
-              <Typography level="body-md" sx={{ mb: 3 }}>
-                {searchConfig?.searchValues.some(field => field !== null)
-                  ? `No items match your selected filters`
-                  : emptyStateDescription
-                }
-              </Typography>
-            </Box>
-          )}
+        {/* Items Grid */}
+        <Grid container spacing={3}>
+          {currentItems.map((item) => (
+            <Grid xs={12} md={6} key={item.id}>
+              {renderCard(item)}
+            </Grid>
+          ))}
+        </Grid>
 
-          {/* Pagination */}
-          {searchFilteredItems.length > 0 && (
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={handlePageChange}
-              totalItems={searchFilteredItems.length}
-              itemsPerPage={itemsPerPage}
-            />
-          )}
+        {/* Empty state (if no items) */}
+        {searchFilteredItems.length === 0 && (
+          <Box
+            sx={{
+              textAlign: 'center',
+              py: 8,
+              color: 'text.secondary',
+            }}
+          >
+            <Typography level="h4" sx={{ mb: 2 }}>
+              {searchConfig?.searchValues.some(field => field !== null) ? 'No results found' : emptyStateTitle}
+            </Typography>
+            <Typography level="body-md" sx={{ mb: 3 }}>
+              {searchConfig?.searchValues.some(field => field !== null)
+                ? `No items match your selected filters`
+                : emptyStateDescription
+              }
+            </Typography>
+          </Box>
+        )}
+
+        {/* Pagination */}
+        {searchFilteredItems.length > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+            totalItems={searchFilteredItems.length}
+            itemsPerPage={itemsPerPage}
+          />
+        )}
       </Box>
     </Box>
   );

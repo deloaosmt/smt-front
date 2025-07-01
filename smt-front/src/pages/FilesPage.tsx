@@ -113,7 +113,7 @@ const FilesPage = () => {
     setSearchParams(newSearchParams, { replace: true });
   }, [searchFields, setSearchParams]);
 
-  const handleCreateFile = async (formData: Record<string, string>) => {
+  const handleCreateFile = async () => {
     console.log('Creating file with data:', formData);
     try {
       const updatedFiles = await fileService.getFiles();
@@ -127,7 +127,7 @@ const FilesPage = () => {
     const [newProjectId, newSubprojectId] = newSearchFields;
     const [oldProjectId] = searchFields;
 
-    let fieldsToUpdate = [...newSearchFields];
+    const fieldsToUpdate = [...newSearchFields];
 
     // If project has changed, we must reset subproject and revision.
     if (newProjectId !== oldProjectId) {
