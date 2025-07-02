@@ -2,14 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Box,
   Button,
-  DialogContent,
-  DialogTitle,
-  FormControl,
-  FormLabel,
   Grid,
-  Input,
-  Modal,
-  ModalDialog,
   Stack,
   Typography,
   Select,
@@ -205,7 +198,7 @@ const DataGrid = <T extends { id: string | number }>({
         </Box>
 
         {/* Items Grid */}
-        <Grid container spacing={3}>
+        <Grid container spacing={5} justifyContent="space-between">
           {currentItems.map((item) => (
             <Grid xs={12} md={6} key={item.id}>
               {renderCard(item)}
