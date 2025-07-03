@@ -5,7 +5,8 @@ import DataGrid from '../components/DataGrid';
 import DataCard from '../components/DataCard';
 import type { Subproject } from '../types/subpoject';
 import type { Project } from '../types/project';
-import { projectService, subprojectService } from '../api/Services';
+import type { File } from '../types/file';
+import { projectService, subprojectService, fileService, diffService } from '../api/Services';
 import { CircularLoader } from '../components/CircularLoader';
 import { Button, DialogContent, DialogTitle, FormControl, FormLabel, Input, Modal, ModalDialog, Option, Select, Stack } from '@mui/joy';
 
@@ -16,6 +17,13 @@ const SubprojectsPage = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentProject, setCurrentProject] = useState<Project | null>(null);
+
+  // Analysis modal states
+  const [analysisModalOpen, setAnalysisModalOpen] = useState(false);
+  const [selectedSubproject, setSelectedSubproject] = useState<Subproject | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
+  const [selectedFiles, setSelectedFiles] = useState<{ diffname: string | null, left: string | null, right: string | null }>({ diffname: null, left: null, right: null });
+  const [isCreatingDiff, setIsCreatingDiff] = useState(false);
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
@@ -133,6 +141,98 @@ const SubprojectsPage = () => {
     </Modal>
   );
 
+  const handleOpenAnalysisModal = async (subproject: Subproject) => {
+    setSelectedSubproject(subproject);
+    setSelectedFiles({ diffname: null, left: null, right: null });
+    setIsCreatingDiff(false);
+
+    try {
+      // Get all files for this subproject
+      const allFiles = await fileService.getFiles();
+      const subprojectFiles = allFiles.filter(file => file.subproject_id === subproject.id);
+      setFiles(subprojectFiles);
+      setAnalysisModalOpen(true);
+    } catch (error) {
+      console.error('Error loading files for subproject:', error);
+    }
+  };
+
+  const handleCreateDiff = async () => {
+    if (!selectedFiles.left || !selectedFiles.right) {
+      console.error('Both files must be selected');
+      return;
+    }
+
+    setIsCreatingDiff(true);
+    try {
+      const result = await diffService.createDiff({
+        name: `Diff ${new Date().toISOString()}`,
+        doc_id_left: parseInt(selectedFiles.left),
+        doc_id_right: parseInt(selectedFiles.right),
+        target_subproject_id: selectedSubproject?.id
+      });
+
+      console.log('Diff created:', result);
+      setAnalysisModalOpen(false);
+      // Optionally navigate to the created diff file or show a success message
+    } catch (error) {
+      console.error('Error creating diff:', error);
+    } finally {
+      setIsCreatingDiff(false);
+    }
+  };
+
+  const analysisModal = (
+    <Modal open={analysisModalOpen} onClose={() => !isCreatingDiff && setAnalysisModalOpen(false)}>
+      <ModalDialog size="lg">
+        <DialogTitle>Анализ подпроекта</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2}>
+            <p>Выберите два файла для анализа.</p>
+
+            <FormControl>
+              <FormLabel>Название дифф-файла</FormLabel>
+              <Input onChange={(e) => setSelectedFiles(prev => ({ ...prev, diffname: e.target.value }))} />
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>Первый файл</FormLabel>
+              <Select
+                value={selectedFiles.left}
+                onChange={(_, value) => setSelectedFiles(prev => ({ ...prev, left: value }))}
+                placeholder="Выберите первый файл"
+              >
+                {files.map(file => (
+                  <Option key={`left-${file.id}`} value={file.id.toString()}>{file.name}</Option>
+                ))}
+              </Select>
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>Второй файл</FormLabel>
+              <Select
+                value={selectedFiles.right}
+                onChange={(_, value) => setSelectedFiles(prev => ({ ...prev, right: value }))}
+                placeholder="Выберите второй файл"
+              >
+                {files.map(file => (
+                  <Option key={`right-${file.id}`} value={file.id.toString()}>{file.name}</Option>
+                ))}
+              </Select>
+            </FormControl>
+
+            <Button
+              onClick={handleCreateDiff}
+              disabled={!selectedFiles.left || !selectedFiles.right || !selectedFiles.diffname || isCreatingDiff}
+            >
+              {isCreatingDiff ? <CircularLoader size="sm" /> : 'Создать анализ'}
+            </Button>
+          </Stack>
+        </DialogContent>
+      </ModalDialog>
+    </Modal>
+  );
+
   return (
     <>
       <Navigation />
@@ -147,6 +247,9 @@ const SubprojectsPage = () => {
             >
               <Button variant="outlined" color="danger" size="sm" onClick={() => setDeleteModalOpen(subproject)}>
                 Удалить
+              </Button>
+              <Button variant="outlined" color="neutral" size="sm" onClick={() => handleOpenAnalysisModal(subproject)}>
+                Анализ
               </Button>
               <Button variant="outlined" color="neutral" size="sm" onClick={() => navigate(`/subprojects/${subproject.id}/revisions`)}>
                 Открыть
@@ -165,6 +268,7 @@ const SubprojectsPage = () => {
       }
       {deleteModal}
       {createModal}
+      {analysisModal}
     </>
   );
 };
