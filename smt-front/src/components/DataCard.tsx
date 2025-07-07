@@ -1,14 +1,16 @@
 import React from 'react';
-import { Card, CardContent, Typography, Stack } from '@mui/joy';
+import { Card, CardContent, Typography, Stack, Chip } from '@mui/joy';
 
 
 interface DataCardProps {
   title: string;
+  chip?: string;
   children?: React.ReactNode;
 }
 
 const DataCard: React.FC<DataCardProps> = ({
   title,
+  chip,
   children
 }) => {
   return (
@@ -36,6 +38,7 @@ const DataCard: React.FC<DataCardProps> = ({
         >
           {title}
         </Typography>
+        {chip && <Chip color="primary" size="md" sx={{ alignSelf: 'center' }}>{chip}</Chip>}
         <Stack direction="row" spacing={1} justifyContent="space-between" alignItems="center">
           {children}
         </Stack>

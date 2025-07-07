@@ -202,6 +202,7 @@ const RevisionsPage = () => {
           renderCard={(revision) => (
             <DataCard
               title={revision.title}
+              chip={`Ревизия ${revision.revision_number}`}
             >
               <Button variant="outlined" color="danger" size="sm" onClick={() => setDeleteModalOpen(revision)}>
                 Удалить

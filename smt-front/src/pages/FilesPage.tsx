@@ -9,7 +9,7 @@ import type { Subproject } from '../types/subpoject';
 import type { Revision } from '../types/revision';
 import { fileService, projectService, subprojectService, revisionService } from '../api/Services';
 import { CircularLoader } from '../components/CircularLoader';
-import { Modal, ModalDialog, DialogTitle, DialogContent, Stack, FormControl, FormLabel, Input, Select, Button, Option } from '@mui/joy';
+import { Modal, ModalDialog, DialogTitle, DialogContent, Stack, FormControl, FormLabel, Input, Select, Button, Option, Chip } from '@mui/joy';
 
 const FilesPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -380,7 +380,7 @@ const FilesPage = () => {
           title="Файлы"
           items={files}
           renderCard={(file) => (
-            <DataCard title={file.name}>
+            <DataCard title={file.name} chip={file.document_type}>
               <Button variant="outlined" color="danger" size="sm" onClick={() => setDeleteModalOpen(file)}>
                 Удалить
               </Button>

@@ -166,10 +166,11 @@ const SubprojectsPage = () => {
     setIsCreatingDiff(true);
     try {
       const result = await diffService.createDiff({
-        name: `Diff ${new Date().toISOString()}`,
+        name: selectedFiles.diffname || `Diff ${new Date().toISOString()}`,
         doc_id_left: parseInt(selectedFiles.left),
         doc_id_right: parseInt(selectedFiles.right),
-        target_subproject_id: selectedSubproject?.id
+        target_subproject_id: selectedSubproject?.id,
+        target_project_id: selectedSubproject?.project_id
       });
 
       console.log('Diff created:', result);
