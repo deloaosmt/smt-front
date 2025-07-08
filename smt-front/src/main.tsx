@@ -5,9 +5,15 @@ import './index.css'
 import App from './App.tsx'
 
 createRoot(document.getElementById('root')!).render(
-  <StrictMode>
+  import.meta.env.MODE === 'development' ? (
+    <StrictMode>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </StrictMode>
+  ) : (
     <BrowserRouter>
       <App />
     </BrowserRouter>
-  </StrictMode>,
+  )
 )

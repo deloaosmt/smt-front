@@ -1,4 +1,3 @@
-import React from 'react';
 import { Box, Button, Avatar, Typography } from '@mui/joy';
 import { useNavigate, useLocation } from 'react-router';
 import useAuth from '../auth/AuthHook';

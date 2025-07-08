@@ -24,21 +24,23 @@ const DataCard: React.FC<DataCardProps> = ({
       }}
     >
       <CardContent sx={{
-        p: 1,
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
         height: '100%'
       }}>
-        <Typography
-          level="h4"
-          sx={{
-            fontWeight: 'bold',
-          }}
-        >
-          {title}
-        </Typography>
-        {chip && <Chip color="primary" size="md" sx={{ alignSelf: 'center' }}>{chip}</Chip>}
+        <Stack direction="row" spacing={1} justifyContent="space-between" alignItems="center">
+          <Typography
+            level="title-lg"
+            sx={{
+              fontWeight: 'bold',
+            }}
+          >
+            {title}
+          </Typography>
+          {chip && <Chip color="primary" size="md" sx={{ alignSelf: 'flex-end' }}>{chip}</Chip>}
+        </Stack>
+
         <Stack direction="row" spacing={1} justifyContent="space-between" alignItems="center">
           {children}
         </Stack>

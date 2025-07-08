@@ -125,7 +125,7 @@ const SubprojectsPage = () => {
             </FormControl>
             <FormControl>
               <FormLabel>Проект</FormLabel>
-              <Select name="projectId" required defaultValue={projectId} value={projectId}>
+              <Select name="projectId" required>
                 {projectId && currentProject
                   ? <Option value={currentProject.id}>{currentProject.title}</Option>
                   : projects.map(project => (

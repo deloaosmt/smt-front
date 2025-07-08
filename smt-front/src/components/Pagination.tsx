@@ -59,7 +59,7 @@ const Pagination: React.FC<PaginationProps> = ({
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        mt: 4,
+        mt: 6,
         px: 2,
       }}
     >

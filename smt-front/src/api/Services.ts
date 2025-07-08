@@ -2,11 +2,9 @@ import type { Project, ProjectCreate, ProjectUpdate, ProjectResponse, ProjectLis
 import type { Revision, RevisionCreate, RevisionUpdate, RevisionResponse, RevisionListResponse } from "../types/revision"
 import type { Subproject, SubprojectCreate, SubprojectUpdate, SubprojectResponse, SubprojectListResponse } from "../types/subpoject"
 import type { File, FileUpload, FileResponse, FileListResponse, DownloadUrlResponse } from "../types/file"
+import { API_URL } from "./host";
 
-// API Configuration
-const API_BASE_URL = 'http://localhost:5000';
 
-// Helper function to get auth token
 const getAuthToken = (): string | null => {
   return localStorage.getItem('authToken');
 };
@@ -33,7 +31,7 @@ const createHeaders = (): HeadersInit => {
 class ProjectService {
   // GET /api/projects - list all projects
   async getProjects(offset: number = 0, limit: number = 1000): Promise<Project[]> {
-    const response = await fetch(`${API_BASE_URL}/api/projects?offset=${offset}&limit=${limit}`, {
+    const response = await fetch(`${API_URL}/api/projects?offset=${offset}&limit=${limit}`, {
       headers: createHeaders()
     });
     const data: ProjectListResponse = await handleResponse(response);
@@ -42,7 +40,7 @@ class ProjectService {
 
   // GET /api/projects/{project_id} - get a specific project
   async getProject(projectId: number): Promise<Project> {
-    const response = await fetch(`${API_BASE_URL}/api/projects/${projectId}`, {
+    const response = await fetch(`${API_URL}/api/projects/${projectId}`, {
       headers: createHeaders()
     });
     const data: ProjectResponse = await handleResponse(response);
@@ -51,7 +49,7 @@ class ProjectService {
 
   // POST /api/projects/create - create a new project
   async createProject(projectData: ProjectCreate): Promise<Project> {
-    const response = await fetch(`${API_BASE_URL}/api/projects/create`, {
+    const response = await fetch(`${API_URL}/api/projects/create`, {
       method: 'POST',
       headers: createHeaders(),
       body: JSON.stringify(projectData)
@@ -62,7 +60,7 @@ class ProjectService {
 
   // PUT /api/projects/{project_id} - update a project
   async updateProject(projectId: number, projectData: ProjectUpdate): Promise<Project> {
-    const response = await fetch(`${API_BASE_URL}/api/projects/${projectId}`, {
+    const response = await fetch(`${API_URL}/api/projects/${projectId}`, {
       method: 'PUT',
       headers: createHeaders(),
       body: JSON.stringify(projectData)
@@ -73,7 +71,7 @@ class ProjectService {
 
   // DELETE /api/projects/{project_id} - delete a project
   async deleteProject(projectId: number): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/api/projects/${projectId}`, {
+    const response = await fetch(`${API_URL}/api/projects/${projectId}`, {
       method: 'DELETE',
       headers: createHeaders()
     });
@@ -85,7 +83,7 @@ class ProjectService {
 class SubprojectService {
   // GET /api/projects/{project_id}/subprojects - list subprojects for a project
   async getSubprojects(projectId: number, offset: number = 0, limit: number = 1000): Promise<Subproject[]> {
-    const response = await fetch(`${API_BASE_URL}/api/projects/${projectId}/subprojects?offset=${offset}&limit=${limit}`, {
+    const response = await fetch(`${API_URL}/api/projects/${projectId}/subprojects?offset=${offset}&limit=${limit}`, {
       headers: createHeaders()
     });
     const data: SubprojectListResponse = await handleResponse(response);
@@ -94,7 +92,7 @@ class SubprojectService {
 
   // GET /api/subprojects/{subproject_id} - get a specific subproject
   async getSubproject(subprojectId: number): Promise<Subproject> {
-    const response = await fetch(`${API_BASE_URL}/api/subprojects/${subprojectId}`, {
+    const response = await fetch(`${API_URL}/api/subprojects/${subprojectId}`, {
       headers: createHeaders()
     });
     const data: SubprojectResponse = await handleResponse(response);
@@ -103,7 +101,7 @@ class SubprojectService {
 
   // POST /api/projects/{project_id}/subprojects/create - create a new subproject
   async createSubproject(projectId: number, subprojectData: SubprojectCreate): Promise<Subproject> {
-    const response = await fetch(`${API_BASE_URL}/api/projects/${projectId}/subprojects/create`, {
+    const response = await fetch(`${API_URL}/api/projects/${projectId}/subprojects/create`, {
       method: 'POST',
       headers: createHeaders(),
       body: JSON.stringify(subprojectData)
@@ -114,7 +112,7 @@ class SubprojectService {
 
   // PUT /api/subprojects/{subproject_id} - update a subproject
   async updateSubproject(subprojectId: number, subprojectData: SubprojectUpdate): Promise<Subproject> {
-    const response = await fetch(`${API_BASE_URL}/api/subprojects/${subprojectId}`, {
+    const response = await fetch(`${API_URL}/api/subprojects/${subprojectId}`, {
       method: 'PUT',
       headers: createHeaders(),
       body: JSON.stringify(subprojectData)
@@ -125,7 +123,7 @@ class SubprojectService {
 
   // DELETE /api/subprojects/{subproject_id} - delete a subproject
   async deleteSubproject(subprojectId: number): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/api/subprojects/${subprojectId}`, {
+    const response = await fetch(`${API_URL}/api/subprojects/${subprojectId}`, {
       method: 'DELETE',
       headers: createHeaders()
     });
@@ -137,7 +135,7 @@ class SubprojectService {
 class RevisionService {
   // GET /api/subprojects/{subproject_id}/revisions - list revisions for a subproject
   async getRevisions(subprojectId: number, offset: number = 0, limit: number = 1000): Promise<Revision[]> {
-    const response = await fetch(`${API_BASE_URL}/api/subprojects/${subprojectId}/revisions?offset=${offset}&limit=${limit}`, {
+    const response = await fetch(`${API_URL}/api/subprojects/${subprojectId}/revisions?offset=${offset}&limit=${limit}`, {
       headers: createHeaders()
     });
     const data: RevisionListResponse = await handleResponse(response);
@@ -146,7 +144,7 @@ class RevisionService {
 
   // GET /api/revisions/{revision_id} - get a specific revision
   async getRevision(revisionId: number): Promise<Revision> {
-    const response = await fetch(`${API_BASE_URL}/api/revisions/${revisionId}`, {
+    const response = await fetch(`${API_URL}/api/revisions/${revisionId}`, {
       headers: createHeaders()
     });
     const data: RevisionResponse = await handleResponse(response);
@@ -155,7 +153,7 @@ class RevisionService {
 
   // POST /api/subprojects/{subproject_id}/revisions/create - create a new revision
   async createRevision(subprojectId: number, revisionData: RevisionCreate): Promise<Revision> {
-    const response = await fetch(`${API_BASE_URL}/api/subprojects/${subprojectId}/revisions/create`, {
+    const response = await fetch(`${API_URL}/api/subprojects/${subprojectId}/revisions/create`, {
       method: 'POST',
       headers: createHeaders(),
       body: JSON.stringify(revisionData)
@@ -166,7 +164,7 @@ class RevisionService {
 
   // PUT /api/revisions/{revision_id} - update a revision
   async updateRevision(revisionId: number, revisionData: RevisionUpdate): Promise<Revision> {
-    const response = await fetch(`${API_BASE_URL}/api/revisions/${revisionId}`, {
+    const response = await fetch(`${API_URL}/api/revisions/${revisionId}`, {
       method: 'PUT',
       headers: createHeaders(),
       body: JSON.stringify(revisionData)
@@ -177,7 +175,7 @@ class RevisionService {
 
   // DELETE /api/revisions/{revision_id} - delete a revision
   async deleteRevision(revisionId: number): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/api/revisions/${revisionId}`, {
+    const response = await fetch(`${API_URL}/api/revisions/${revisionId}`, {
       method: 'DELETE',
       headers: createHeaders()
     });
@@ -189,7 +187,7 @@ class RevisionService {
 class FileService {
   // GET /api/files - list files with optional filters
   async getFiles(offset: number = 0, limit: number = 1000): Promise<File[]> {
-    const response = await fetch(`${API_BASE_URL}/api/files?offset=${offset}&limit=${limit}`, {
+    const response = await fetch(`${API_URL}/api/files?offset=${offset}&limit=${limit}`, {
       headers: createHeaders()
     });
     const data: FileListResponse = await handleResponse(response);
@@ -198,7 +196,7 @@ class FileService {
 
   // GET /api/files/{file_id}/info - get file information
   async getFileInfo(fileId: number): Promise<File> {
-    const response = await fetch(`${API_BASE_URL}/api/files/${fileId}/info`, {
+    const response = await fetch(`${API_URL}/api/files/${fileId}/info`, {
       headers: createHeaders()
     });
     const data: FileResponse = await handleResponse(response);
@@ -211,12 +209,12 @@ class FileService {
     formData.append('name', fileData.name);
     formData.append('document_type', fileData.document_type);
     formData.append('file', file);
-    
+
     if (fileData.revision_id) formData.append('revision_id', fileData.revision_id.toString());
     if (fileData.project_id) formData.append('project_id', fileData.project_id.toString());
     if (fileData.subproject_id) formData.append('subproject_id', fileData.subproject_id.toString());
 
-    const response = await fetch(`${API_BASE_URL}/api/files`, {
+    const response = await fetch(`${API_URL}/api/files`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${getAuthToken()}`
@@ -229,7 +227,7 @@ class FileService {
 
   // DELETE /api/files/{file_id} - delete a file
   async deleteFile(fileId: number): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/api/files/${fileId}`, {
+    const response = await fetch(`${API_URL}/api/files/${fileId}`, {
       method: 'DELETE',
       headers: createHeaders()
     });
@@ -238,7 +236,7 @@ class FileService {
 
   // GET /api/files/{file_id}/download - get file download url
   async getDownloadUrl(fileId: number): Promise<DownloadUrlResponse> {
-    const response = await fetch(`${API_BASE_URL}/api/files/${fileId}/download`, {
+    const response = await fetch(`${API_URL}/api/files/${fileId}/download`, {
       headers: createHeaders()
     });
     return handleResponse(response);
@@ -246,7 +244,7 @@ class FileService {
 
   // GET /api/document-types - get list of available document types
   async getDocumentTypes(): Promise<{ type: string }[]> {
-    const response = await fetch(`${API_BASE_URL}/api/document-types`, {
+    const response = await fetch(`${API_URL}/api/document-types`, {
       headers: createHeaders()
     });
     const data: { document_types: { type: string }[] } = await handleResponse(response);
@@ -265,7 +263,7 @@ class DiffService {
     target_subproject_id?: number;
     target_project_id?: number;
   }): Promise<File> {
-    const response = await fetch(`${API_BASE_URL}/api/diff`, {
+    const response = await fetch(`${API_URL}/api/diff`, {
       method: 'POST',
       headers: createHeaders(),
       body: JSON.stringify(diffData)

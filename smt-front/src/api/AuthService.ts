@@ -1,9 +1,6 @@
 import type { UserRegister, UserLogin, UserResponse, TokenResponse, LogoutResponse } from "../types/user";
+import { API_URL } from "./host";
 
-// API Configuration
-const API_BASE_URL = 'http://localhost:5000';
-
-// Helper function to handle API responses
 const handleResponse = async <T>(response: Response): Promise<T> => {
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
@@ -23,7 +20,7 @@ const createHeaders = (): HeadersInit => {
 
 class AuthService {
   async register(userData: UserRegister): Promise<UserResponse> {
-    const response = await fetch(`${API_BASE_URL}/api/users/register`, {
+    const response = await fetch(`${API_URL}/api/users/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -42,7 +39,7 @@ class AuthService {
   }
 
   async login(credentials: UserLogin): Promise<UserResponse> {
-    const response = await fetch(`${API_BASE_URL}/api/users/login`, {
+    const response = await fetch(`${API_URL}/api/users/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -61,7 +58,7 @@ class AuthService {
   }
 
   async logout(): Promise<LogoutResponse> {
-    const response = await fetch(`${API_BASE_URL}/api/users/logout`, {
+    const response = await fetch(`${API_URL}/api/users/logout`, {
       method: 'POST',
       headers: createHeaders()
     });
@@ -75,7 +72,7 @@ class AuthService {
   }
 
   async refreshToken(): Promise<TokenResponse> {
-    const response = await fetch(`${API_BASE_URL}/api/users/refresh`, {
+    const response = await fetch(`${API_URL}/api/users/refresh`, {
       method: 'POST',
       headers: createHeaders()
     });
@@ -91,7 +88,7 @@ class AuthService {
   }
 
   async getUserInfo(): Promise<UserResponse> {
-    const response = await fetch(`${API_BASE_URL}/api/users/info`, {
+    const response = await fetch(`${API_URL}/api/users/info`, {
       headers: createHeaders()
     });
     
