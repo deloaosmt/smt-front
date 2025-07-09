@@ -32,7 +32,8 @@ const RegisterPage = () => {
         const registerData = {
             email: data.get("email") as string,
             password: data.get("password") as string,
-            full_name: `${data.get("first_name")} ${data.get("last_name")}`.trim() || null
+            full_name: `${data.get("first_name")} ${data.get("last_name")}`.trim() || null,
+            code: data.get("code") as string || null,
         };
         
         try {
@@ -103,6 +104,15 @@ const RegisterPage = () => {
                             type="password"
                             id="password"
                             autoComplete="new-password"
+                            disabled={isLoading}
+                        />
+                    </FormControl>
+                    <FormControl required sx={{ width: '100%', mb: 2 }}>
+                        <FormLabel>Код регистрации</FormLabel>
+                        <Input
+                            name="code"
+                            type="text"
+                            id="code"
                             disabled={isLoading}
                         />
                     </FormControl>

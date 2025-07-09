@@ -12,6 +12,7 @@ export interface UserRegister {
   email: string;
   password: string;
   full_name?: string | null;
+  code?: string | null;
 }
 
 export interface UserLogin {
