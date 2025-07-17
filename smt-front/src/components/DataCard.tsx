@@ -18,7 +18,7 @@ const DataCard: React.FC<DataCardProps> = ({
       variant="outlined"
       sx={{
         width: '80%',
-        minWidth: '250px',
+        minWidth: '300px',
         maxWidth: '320px',
         height: '100%',
       }}
@@ -27,7 +27,8 @@ const DataCard: React.FC<DataCardProps> = ({
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
-        height: '100%'
+        height: '100%',
+        width: '100%',
       }}>
         <Stack direction="row" spacing={1} justifyContent="space-between" alignItems="center">
           <Typography
