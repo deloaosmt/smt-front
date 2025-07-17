@@ -14,7 +14,7 @@ import Pagination from './Pagination';
 import CloseRounded from '@mui/icons-material/CloseRounded';
 
 interface SearchProps {
-  searchOptions: Array<{ label: string, values: string[] }>
+  searchOptions: Array<{ label: string, values: Array<{ id: string, title: string }> }>
   onChange: (searchFields: Array<string | null>) => void
   searchValues: Array<string | null>
 }
@@ -57,8 +57,8 @@ function SearchBar({ onChange, searchOptions, searchValues }: SearchProps) {
           })}
         >
           {option.values.map((value) => (
-            <Option key={value} value={value}>
-              {value}
+            <Option key={value.id} value={value.id}>
+              {value.title}
             </Option>
           ))}
         </Select>
@@ -127,7 +127,7 @@ const DataGrid = <T extends { id: string | number }>({
             break;
           }
           case 'revision':
-          case 'ревизия': {
+          case 'Изм': {
             itemValue = (item as Record<string, unknown>).revision_id;
             break;
           }

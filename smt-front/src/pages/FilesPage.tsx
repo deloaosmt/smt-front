@@ -35,11 +35,11 @@ const FilesPage = () => {
   });
 
 
-  // State for the dropdown options.
-  const [searchOptions, setSearchOptions] = useState<Array<{ label: string, values: string[] }>>([
+  // State for the dropdown options with titles instead of IDs
+  const [searchOptions, setSearchOptions] = useState<Array<{ label: string, values: Array<{ id: string, title: string }> }>>([
     { label: 'Проект', values: [] },
     { label: 'Подпроект', values: [] },
-    { label: 'Ревизия', values: [] }
+    { label: 'Изм', values: [] }
   ]);
 
   const [projectId, subprojectId, revisionId] = searchFields;
@@ -58,7 +58,7 @@ const FilesPage = () => {
       setFiles(filesData);
       setProjects(projectsData);
       setSearchOptions(prev => [
-        { ...prev[0], values: projectsData.map(p => p.id.toString()) },
+        { ...prev[0], values: projectsData.map(p => ({ id: p.id.toString(), title: p.title })) },
         { ...prev[1], values: [] },
         { ...prev[2], values: [] }
       ]);
@@ -96,7 +96,7 @@ const FilesPage = () => {
           setSubprojects(projectSubprojects);
           setSearchOptions(prev => [
             prev[0],
-            { ...prev[1], values: projectSubprojects.map(sp => sp.id.toString()) },
+            { ...prev[1], values: projectSubprojects.map(sp => ({ id: sp.id.toString(), title: sp.title })) },
             { ...prev[2], values: [] } // Reset revisions
           ]);
         })
@@ -123,7 +123,7 @@ const FilesPage = () => {
           setSearchOptions(prev => [
             prev[0],
             prev[1],
-            { ...prev[2], values: subprojectRevisions.map(r => r.id.toString()) }
+            { ...prev[2], values: subprojectRevisions.map(r => ({ id: r.id.toString(), title: r.title })) }
           ]);
         })
         .catch(error => console.error('Error loading revisions:', error))
@@ -302,11 +302,11 @@ const FilesPage = () => {
               </Select>
             </FormControl>
             <FormControl>
-              <FormLabel>Ревизия</FormLabel>
+              <FormLabel>Изм</FormLabel>
               <Select
                 name="revisionId"
                 required
-                placeholder="Выберите ревизию"
+                placeholder="Выберите изм"
                 defaultValue={revisionId || undefined}
               >
                 {revisions.map(revision => (

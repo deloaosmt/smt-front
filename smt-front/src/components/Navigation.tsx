@@ -24,7 +24,7 @@ const Navigation = () => {
   const routes = [
     { path: projectRoute, label: 'Проекты' },
     { path: subprojectRoute, label: 'Подпроекты' },
-    { path: revisionRoute, label: 'Ревизии' },
+    { path: revisionRoute, label: 'Изменения' },
     { path: fileRoute, label: 'Файлы' },
   ];
 

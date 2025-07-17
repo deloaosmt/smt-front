@@ -1,111 +1,51 @@
 import type { UserRegister, UserLogin, UserResponse, TokenResponse, LogoutResponse } from "../types/user";
-import { API_URL } from "./host";
+import { HttpClient } from "./httpClient";
 
-const handleResponse = async <T>(response: Response): Promise<T> => {
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-  }
-  return response.json();
-};
-
-// Helper function to create headers
-const createHeaders = (): HeadersInit => {
-  const token = localStorage.getItem('authToken');
-  return {
-    'Content-Type': 'application/json',
-    ...(token && { 'Authorization': `Bearer ${token}` })
-  };
-};
+const httpClient = new HttpClient();
 
 class AuthService {
   async register(userData: UserRegister): Promise<UserResponse> {
-    const response = await fetch(`${API_URL}/api/users/register`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(userData)
-    });
-    
-    const data: UserResponse = await handleResponse(response);
-    
-    // Store the token
-    if (data.token) {
-      localStorage.setItem('authToken', data.token);
-    }
-    
-    return data;
+    return httpClient.post<UserResponse>('/api/users/register', userData);
   }
 
   async login(credentials: UserLogin): Promise<UserResponse> {
-    const response = await fetch(`${API_URL}/api/users/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(credentials)
-    });
-    
-    const data: UserResponse = await handleResponse(response);
-    
-    // Store the token
-    if (data.token) {
-      localStorage.setItem('authToken', data.token);
-    }
-    
-    return data;
+    return httpClient.post<UserResponse>('/api/users/login', credentials);
   }
 
   async logout(): Promise<LogoutResponse> {
-    const response = await fetch(`${API_URL}/api/users/logout`, {
-      method: 'POST',
-      headers: createHeaders()
-    });
+    const data = await httpClient.post<LogoutResponse>('/api/users/logout');
     
-    const data: LogoutResponse = await handleResponse(response);
-    
-    // Remove the token
-    localStorage.removeItem('authToken');
+    // Clear cookies on logout
+    httpClient.clearAuthTokens();
     
     return data;
   }
 
   async refreshToken(): Promise<TokenResponse> {
-    const response = await fetch(`${API_URL}/api/users/refresh`, {
-      method: 'POST',
-      headers: createHeaders()
-    });
-    
-    const data: TokenResponse = await handleResponse(response);
-    
-    // Update the token
-    if (data.access_token) {
-      localStorage.setItem('authToken', data.access_token);
-    }
-    
-    return data;
+    return httpClient.post<TokenResponse>('/api/users/refresh');
   }
 
   async getUserInfo(): Promise<UserResponse> {
-    const response = await fetch(`${API_URL}/api/users/info`, {
-      headers: createHeaders()
-    });
-    
-    return handleResponse(response);
+    return httpClient.get<UserResponse>('/api/users/info');
   }
 
   // Helper methods
   isAuthenticated(): boolean {
-    return !!localStorage.getItem('authToken');
-  }
-
-  getToken(): string | null {
-    return localStorage.getItem('authToken');
+    return httpClient.isAuthenticated() || httpClient.get<UserResponse>('/api/users/info').then(response => response.user !== null).catch(() => false);
   }
 
   clearToken(): void {
-    localStorage.removeItem('authToken');
+    httpClient.clearAuthTokens();
+  }
+
+  // Get the current access token from cookie
+  getAccessToken(): string | null {
+    return httpClient.getAccessToken();
+  }
+
+  // Get the current refresh token from cookie
+  getRefreshToken(): string | null {
+    return httpClient.getRefreshToken();
   }
 }
 

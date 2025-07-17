@@ -8,6 +8,7 @@ import { projectService } from '../api/Services';
 import { CircularLoader } from '../components/CircularLoader';
 import Button from '@mui/joy/Button';
 import { DialogContent, DialogTitle, FormControl, FormLabel, Input, Modal, ModalDialog, Stack } from '@mui/joy';
+import { truncate } from '../common/TextUtils';
 
 const ProjectsPage = () => {
   const navigate = useNavigate();
@@ -113,7 +114,7 @@ const ProjectsPage = () => {
           title="Проекты"
           items={projects}
           renderCard={(project) => (
-            <DataCard title={project.title} >
+            <DataCard title={truncate(project.title)} >
               <Button variant="outlined" color="danger" size="sm" onClick={() => setDeleteModalOpen(project)}>
                 Удалить
               </Button>

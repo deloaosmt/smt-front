@@ -12,17 +12,24 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Check authentication status on mount
     useEffect(() => {
         const checkAuth = async () => {
+            console.log('🔍 AuthProvider: Starting authentication check...');
             try {
-                if (authService.isAuthenticated()) {
+                const hasCookies = authService.isAuthenticated();
+                if (hasCookies) {
                     const userInfo = await authService.getUserInfo();
                     setUser(userInfo.user);
                     setIsAuthenticated(true);
+                } else {
+                    console.log('🔍 AuthProvider: No cookies found');
                 }
             } catch (error) {
-                console.error('Auth check failed:', error);
+                console.error('❌ AuthProvider: Auth check failed:', error);
                 // Clear invalid token
                 authService.clearToken();
+                setIsAuthenticated(false);
+                setUser(null);
             } finally {
+                console.log('🔍 AuthProvider: Authentication check completed. isAuthenticated:', isAuthenticated);
                 setIsLoading(false);
             }
         };
@@ -31,15 +38,17 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
     }, []);
 
     const setAuth = (auth: boolean, userData?: User | null) => {
+        console.log('🔍 AuthProvider: setAuth called with:', { auth, userData });
         setIsAuthenticated(auth);
         setUser(userData || null);
     };
 
     const logout = async () => {
+        console.log('🔍 AuthProvider: Logout called');
         try {
             await authService.logout();
         } catch (error) {
-            console.error('Logout error:', error);
+            console.error('❌ AuthProvider: Logout error:', error);
         } finally {
             setAuth(false, null);
         }

@@ -17,7 +17,7 @@ const RevisionsPage = () => {
   const [revisions, setRevisions] = useState<Revision[]>([]);
   const [subprojects, setSubprojects] = useState<Subproject[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
-  const [title, setTitle] = useState('Ревизии');
+  const [title, setTitle] = useState('Изменения');
   const [isLoading, setIsLoading] = useState(true);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState<Revision | null>(null);
@@ -36,9 +36,9 @@ const RevisionsPage = () => {
         setCurrentSubproject(subproject);
         setCurrentProject(project);
         setRevisions(subprojectRevisions);
-        setTitle(`Ревизии подпроекта "${subproject.title}"`);
+        setTitle(`Изменения подпроекта "${subproject.title}"`);
       } else {
-        setTitle('Ревизии');
+        setTitle('Изменения');
         setCurrentProject(null);
         setCurrentSubproject(null);
         const allProjects = await projectService.getProjects();
@@ -129,9 +129,9 @@ const RevisionsPage = () => {
   const deleteModal = (
     <Modal open={deleteModalOpen !== null} onClose={() => setDeleteModalOpen(null)}>
       <ModalDialog>
-        <DialogTitle>Удалить ревизию</DialogTitle>
+        <DialogTitle>Удалить изм</DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <p>Вы уверены, что хотите удалить ревизию {deleteModalOpen?.title}?</p>
+          <p>Вы уверены, что хотите удалить изм {deleteModalOpen?.title}?</p>
           <Stack direction="row" spacing={2} justifyContent="space-around">
             <Button variant="outlined" color="danger" onClick={() => handleDeleteRevision(deleteModalOpen!)}>
               Удалить
@@ -148,20 +148,20 @@ const RevisionsPage = () => {
   const createModal = (
     <Modal open={createModalOpen} onClose={() => setCreateModalOpen(false)}>
       <ModalDialog>
-        <DialogTitle>Создать ревизию</DialogTitle>
-        <DialogContent>Заполните информацию о ревизии.</DialogContent>
+        <DialogTitle>Создать изм</DialogTitle>
+        <DialogContent>Заполните информацию о изменении.</DialogContent>
         <form onSubmit={handleCreateRevision}>
           <Stack spacing={2}>
             <FormControl>
-              <FormLabel>Название ревизии</FormLabel>
+              <FormLabel>Название изменения</FormLabel>
               <Input required name="title" />
             </FormControl>
             <FormControl>
-              <FormLabel>Описание ревизии</FormLabel>
+              <FormLabel>Описание изменения</FormLabel>
               <Input name="description" />
             </FormControl>
             <FormControl>
-              <FormLabel>Номер ревизии</FormLabel>
+              <FormLabel>Номер изменения</FormLabel>
               <Input required name="revisionNumber" type="number" />
             </FormControl>
             <FormControl>
@@ -175,7 +175,7 @@ const RevisionsPage = () => {
                 }
               </Select>
             </FormControl>
-            <Button type="submit">Создать ревизию</Button>
+            <Button type="submit">Создать изм</Button>
           </Stack>
         </form>
       </ModalDialog>
@@ -202,7 +202,7 @@ const RevisionsPage = () => {
           renderCard={(revision) => (
             <DataCard
               title={revision.title}
-              chip={`Ревизия ${revision.revision_number}`}
+              chip={`Изм ${revision.revision_number}`}
             >
               <Button variant="outlined" color="danger" size="sm" onClick={() => setDeleteModalOpen(revision)}>
                 Удалить
@@ -213,10 +213,10 @@ const RevisionsPage = () => {
             </DataCard>
           )}
           onCreateItem={() => setCreateModalOpen(true)}
-          emptyStateTitle="Нет ревизий"
+          emptyStateTitle="Нет изменений"
           emptyStateDescription={subprojectId
-            ? "В этом подпроекте пока нет ревизий"
-            : "Создайте свою первую ревизию для начала"
+            ? "В этом подпроекте пока нет изменений"
+            : "Создайте свое первое изменение для начала"
           }
           filterFunction={subprojectId ? filterRevisionsBySubproject : undefined}
           filterParams={subprojectId ? { subprojectId } : {}}
