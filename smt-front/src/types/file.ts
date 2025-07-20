@@ -1,6 +1,6 @@
 export interface File {
   id: number;
-  filename: string;
+  filename?: string | null;
   name: string;
   mime_type: string;
   file_size: number;

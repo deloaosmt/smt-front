@@ -393,7 +393,7 @@ const FilesPage = () => {
           renderCard={(file) => (
             <DataCard title={file.name} chip={file.document_type || undefined} chips={
               <Stack direction="column" spacing={1} justifyContent="space-between" alignItems="center">
-                <Typography level="body-sm" sx={{ alignSelf: 'flex-start' }}>{truncate(file.filename, 50)}</Typography>
+                <Typography level="body-sm" sx={{ alignSelf: 'flex-start' }}>{truncate(file.filename || "Без названия", 50)}</Typography>
                 <Typography level="body-sm" sx={{ alignSelf: 'flex-start' }}>Ревизия: {file.revision_id}</Typography>
               </Stack>
             }>
