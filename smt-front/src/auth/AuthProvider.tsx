@@ -18,11 +18,9 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         const checkAuth = async () => {
             try {
-                // First check if we have any cookies at all
                 const hasCookies = authService.getAccessToken() !== null;
                 
                 if (!hasCookies) {
-                    // No cookies, definitely not authenticated
                     if (isMounted) {
                         setIsAuthenticated(false);
                         setUser(null);
@@ -31,7 +29,6 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
                     return;
                 }
                 
-                // We have cookies, verify they're valid
                 const isAuth = await authService.isAuthenticated();
                 if (isMounted) {
                     if (isAuth) {
@@ -39,8 +36,7 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
                             const userInfo = await authService.getUserInfo();
                             setUser(userInfo.user);
                             setIsAuthenticated(true);
-                        } catch (userError) {
-                            console.error('❌ AuthProvider: Failed to get user info:', userError);
+                        } catch {
                             authService.clearToken();
                             setIsAuthenticated(false);
                             setUser(null);
@@ -51,14 +47,11 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
                     }
                 }
             } catch (error) {
-                console.error('❌ AuthProvider: Authentication check failed:', error);
                 if (isMounted) {
-                    // Clear invalid token
                     authService.clearToken();
                     setIsAuthenticated(false);
                     setUser(null);
                     
-                    // Only show error notification if we're not on the login page
                     if (!window.location.pathname.includes('/login')) {
                         notifyError(getErrorMessage(error));
                     }

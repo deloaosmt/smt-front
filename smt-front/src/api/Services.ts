@@ -1,7 +1,7 @@
 import type { Project, ProjectCreate, ProjectUpdate, ProjectResponse, ProjectListResponse } from "../types/project"
 import type { Revision, RevisionCreate, RevisionUpdate, RevisionResponse, RevisionListResponse } from "../types/revision"
 import type { Subproject, SubprojectCreate, SubprojectUpdate, SubprojectResponse, SubprojectListResponse } from "../types/subpoject"
-import type { File, FileUpload, FileResponse, FileListResponse, DownloadUrlResponse } from "../types/file"
+import type { File, FileUpload, FileResponse, FileListResponse, DownloadUrlResponse, FileType } from "../types/file"
 import { HttpClient } from "./httpClient";
 
 const httpClient = new HttpClient();
@@ -143,8 +143,8 @@ class FileService {
   }
 
   // GET /api/document-types - get list of available document types
-  async getDocumentTypes(): Promise<{ type: string }[]> {
-    const data: { document_types: { type: string }[] } = await httpClient.get<{ document_types: { type: string }[] }>('/api/document-types');
+  async getDocumentTypes(): Promise<FileType[]> {
+    const data: { document_types: FileType[] } = await httpClient.get<{ document_types: FileType[] }>('/api/document-types');
     return data.document_types;
   }
 }

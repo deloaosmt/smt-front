@@ -10,8 +10,14 @@ export interface File {
   created_at: string;
   updated_at: string;
   revision_id?: number | null;
+  revision_name?: string | null;
   project_id?: number | null;
   subproject_id?: number | null;
+}
+
+export interface FileType {
+  name: string;
+  type: string;
 }
 
 export interface FileUpload {

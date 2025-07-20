@@ -34,6 +34,7 @@ function SearchBar({ onChange, searchOptions, searchValues }: SearchProps) {
           key={option.label}
           placeholder={option.label}
           value={searchValues[index] || ''}
+          disabled={index !== 0 && searchValues[index - 1] === null}
           onChange={(_, value) => handleSearchChange(index, value as string | null)}
           sx={{ minWidth: 150 }}
           {...(searchValues[index] && {

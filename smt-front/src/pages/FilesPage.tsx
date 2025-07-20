@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router';
 import Navigation from '../components/Navigation';
 import DataGrid from '../components/DataGrid';
 import DataCard from '../components/DataCard';
-import type { File } from '../types/file';
+import type { File, FileType } from '../types/file';
 import type { Project } from '../types/project';
 import type { Subproject } from '../types/subpoject';
 import type { Revision } from '../types/revision';
@@ -27,7 +27,7 @@ const FilesPage = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [subprojects, setSubprojects] = useState<Subproject[]>([]);
   const [revisions, setRevisions] = useState<Revision[]>([]);
-  const [documentTypes, setDocumentTypes] = useState<string[]>([]);
+  const [documentTypes, setDocumentTypes] = useState<FileType[]>([]);
 
   // The single source of truth for the selected search values.
   // Initialized from the URL search params.
@@ -57,7 +57,7 @@ const FilesPage = () => {
       const [filesData, projectsData, documentTypesData] = await Promise.all([
         fileService.getFiles(),
         projectService.getProjects(),
-        fileService.getDocumentTypes()
+        fileService.getDocumentTypes().then(types => types.filter(type => !type.type.endsWith('_DIFF')))
       ]);
       setFiles(filesData);
       setProjects(projectsData);
@@ -66,7 +66,7 @@ const FilesPage = () => {
         { ...prev[1], values: [] },
         { ...prev[2], values: [] }
       ]);
-      setDocumentTypes(documentTypesData.map(type => type.type));
+      setDocumentTypes(documentTypesData);
     } catch (error) {
       console.error('Error loading initial data:', error);
     } finally {
@@ -292,6 +292,7 @@ const FilesPage = () => {
                 required
                 placeholder="Выберите подпроект"
                 defaultValue={subprojectId || undefined}
+                disabled={subprojects.length === 0}
                 onChange={(_, value) => {
                   if (value) {
                     revisionService.getRevisions(parseInt(value.toString()))
@@ -316,6 +317,7 @@ const FilesPage = () => {
                 required
                 placeholder="Выберите изм"
                 defaultValue={revisionId || undefined}
+                disabled={revisions.length === 0}
               >
                 {revisions.map(revision => (
                   <Option key={revision.id} value={revision.id.toString()}>
@@ -328,8 +330,8 @@ const FilesPage = () => {
             <FormControl>
               <FormLabel>Тип документа</FormLabel>
               <Select name="documentType" required placeholder="Выберите тип документа">
-                {documentTypes.map(type => (
-                  <Option key={type} value={type}>{type}</Option>
+                {documentTypes.map(fileType => (
+                  <Option key={fileType.type} value={fileType.type}>{fileType.name}</Option>
                 ))}
               </Select>
             </FormControl>
