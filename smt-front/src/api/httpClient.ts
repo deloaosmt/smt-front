@@ -53,7 +53,11 @@ class HttpClient {
       async (error) => {
         const originalRequest = error.config;
 
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        // Don't retry if this is already a retry attempt or if it's a login/register request
+        if (error.response?.status === 401 && !originalRequest._retry && 
+            !originalRequest.url?.includes('/login') && 
+            !originalRequest.url?.includes('/register')) {
+          
           if (this.isRefreshing) {
             // If already refreshing, queue this request
             return new Promise((resolve, reject) => {
@@ -85,7 +89,10 @@ class HttpClient {
             });
             this.failedQueue = [];
 
-            window.location.href = '/login';
+            // Don't redirect if we're already on the login page
+            if (!window.location.pathname.includes('/login')) {
+              window.location.href = '/login';
+            }
             
             return Promise.reject(refreshError);
           } finally {
@@ -96,8 +103,8 @@ class HttpClient {
         // Handle other errors
         if (error.response) {
           const errorData = error.response.data;
-          const message = errorData?.message || `HTTP error! status: ${error.response.status}`;
-          return Promise.reject(new Error(message));
+          // Preserve the original error structure from the backend
+          return Promise.reject(errorData || error);
         }
         return Promise.reject(error);
       }

@@ -10,10 +10,13 @@ import { revisionService, subprojectService, projectService } from '../api/Servi
 import { CircularLoader } from '../components/CircularLoader';
 import Button from '@mui/joy/Button';
 import { DialogContent, DialogTitle, FormControl, FormLabel, Input, Modal, ModalDialog, Stack, Select, Option } from '@mui/joy';
+import useNotification from '../notifications/hook';
+import { getErrorMessage } from '../common/OnError';
 
 const RevisionsPage = () => {
   const { subprojectId } = useParams<{ subprojectId?: string }>();
   const navigate = useNavigate();
+  const { notifySuccess, notifyError } = useNotification();
   const [revisions, setRevisions] = useState<Revision[]>([]);
   const [subprojects, setSubprojects] = useState<Subproject[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -61,6 +64,7 @@ const RevisionsPage = () => {
       }
     } catch (error) {
       console.error('Error loading data:', error);
+      notifyError(getErrorMessage(error));
     } finally {
       setIsLoading(false);
     }
@@ -83,6 +87,7 @@ const RevisionsPage = () => {
 
     if (!project || !subproject) {
       console.error('Could not find project or subproject for revision:', revision.id);
+      notifyError('Не удалось найти проект или подпроект для ревизии');
       return;
     }
 
@@ -100,6 +105,7 @@ const RevisionsPage = () => {
 
     if (!targetSubprojectId) {
       console.error('Subproject ID is required to create a revision');
+      notifyError('ID подпроекта обязателен для создания ревизии');
       return;
     }
 
@@ -111,8 +117,10 @@ const RevisionsPage = () => {
       });
       setCreateModalOpen(false);
       await loadData();
+      notifySuccess('Ревизия успешно создана');
     } catch (error) {
       console.error('Error creating revision:', error);
+      notifyError(getErrorMessage(error));
     }
   };
 
@@ -121,8 +129,10 @@ const RevisionsPage = () => {
       await revisionService.deleteRevision(revision.id);
       setDeleteModalOpen(null);
       await loadData();
+      notifySuccess('Ревизия успешно удалена');
     } catch (error) {
       console.error('Error deleting revision:', error);
+      notifyError(getErrorMessage(error));
     }
   };
 

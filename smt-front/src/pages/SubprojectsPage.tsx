@@ -9,10 +9,13 @@ import type { File } from '../types/file';
 import { projectService, subprojectService, fileService, diffService } from '../api/Services';
 import { CircularLoader } from '../components/CircularLoader';
 import { Button, DialogContent, DialogTitle, FormControl, FormLabel, Input, Modal, ModalDialog, Option, Select, Stack } from '@mui/joy';
+import useNotification from '../notifications/hook';
+import { getErrorMessage } from '../common/OnError';
 
 const SubprojectsPage = () => {
   const navigate = useNavigate();
   const { projectId } = useParams<{ projectId?: string }>();
+  const { notifySuccess, notifyError } = useNotification();
   const [subprojects, setSubprojects] = useState<Subproject[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -58,13 +61,19 @@ const SubprojectsPage = () => {
     const description = formData.get('description') as string;
     const targetProjectId = projectId || formData.get('projectId') as string;
 
-    await subprojectService.createSubproject(parseInt(targetProjectId), {
-      title: title,
-      description: description || null
-    });
+    try {
+      await subprojectService.createSubproject(parseInt(targetProjectId), {
+        title: title,
+        description: description || null
+      });
 
-    setCreateModalOpen(false);
-    await loadData();
+      setCreateModalOpen(false);
+      await loadData();
+      notifySuccess('Подпроект успешно создан');
+    } catch (error) {
+      console.error('Error creating subproject:', error);
+      notifyError(getErrorMessage(error));
+    }
   };
 
   const filterSubprojectsByProject = (subprojects: Subproject[], params: Record<string, unknown>) => {
@@ -79,8 +88,10 @@ const SubprojectsPage = () => {
     try {
       await subprojectService.deleteSubproject(subproject.id);
       await loadData();
+      notifySuccess('Подпроект успешно удален');
     } catch (error) {
       console.error('Error deleting subproject:', error);
+      notifyError(getErrorMessage(error));
     }
     setDeleteModalOpen(null);
   };
@@ -154,12 +165,14 @@ const SubprojectsPage = () => {
       setAnalysisModalOpen(true);
     } catch (error) {
       console.error('Error loading files for subproject:', error);
+      notifyError(getErrorMessage(error));
     }
   };
 
   const handleCreateDiff = async () => {
     if (!selectedFiles.left || !selectedFiles.right) {
       console.error('Both files must be selected');
+      notifyError('Необходимо выбрать оба файла для сравнения');
       return;
     }
 
@@ -175,9 +188,11 @@ const SubprojectsPage = () => {
 
       console.log('Diff created:', result);
       setAnalysisModalOpen(false);
+      notifySuccess('Дифф-файл успешно создан');
       // Optionally navigate to the created diff file or show a success message
     } catch (error) {
       console.error('Error creating diff:', error);
+      notifyError(getErrorMessage(error));
     } finally {
       setIsCreatingDiff(false);
     }

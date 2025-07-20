@@ -9,10 +9,14 @@ import type { Subproject } from '../types/subpoject';
 import type { Revision } from '../types/revision';
 import { fileService, projectService, subprojectService, revisionService } from '../api/Services';
 import { CircularLoader } from '../components/CircularLoader';
-import { Modal, ModalDialog, DialogTitle, DialogContent, Stack, FormControl, FormLabel, Input, Select, Button, Option } from '@mui/joy';
+import { Modal, ModalDialog, DialogTitle, DialogContent, Stack, FormControl, FormLabel, Input, Select, Button, Option, Typography } from '@mui/joy';
+import { truncate } from '../common/TextUtils';
+import useNotification from '../notifications/hook';
+import { getErrorMessage } from '../common/OnError';
 
 const FilesPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { notifySuccess, notifyError } = useNotification();
   const [files, setFiles] = useState<File[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -181,8 +185,10 @@ const FilesPage = () => {
       setSelectedFile(null);
       setCreateModalOpen(false);
       await loadData();
+      notifySuccess('Файл успешно создан!');
     } catch (error) {
       console.error('Error creating file:', error);
+      notifyError(getErrorMessage(error));
     }
   };
 
@@ -191,8 +197,10 @@ const FilesPage = () => {
       await fileService.deleteFile(file.id);
       setDeleteModalOpen(null);
       await loadData();
+      notifySuccess('Файл успешно удален!');
     } catch (error) {
       console.error('Error deleting file:', error);
+      notifyError(getErrorMessage(error));
     }
   };
 
@@ -368,6 +376,7 @@ const FilesPage = () => {
       window.open(downloadUrl.download_url, '_blank');
     } catch (error) {
       console.error('Error downloading file:', error);
+      notifyError(getErrorMessage(error));
     }
   };
 
@@ -380,7 +389,12 @@ const FilesPage = () => {
           title="Файлы"
           items={files}
           renderCard={(file) => (
-            <DataCard title={file.name} chip={file.document_type || undefined}>
+            <DataCard title={file.name} chip={file.document_type || undefined} chips={
+              <Stack direction="column" spacing={1} justifyContent="space-between" alignItems="center">
+                <Typography level="body-sm" sx={{ alignSelf: 'flex-start' }}>{truncate(file.filename, 50)}</Typography>
+                <Typography level="body-sm" sx={{ alignSelf: 'flex-start' }}>Ревизия: {file.revision_id}</Typography>
+              </Stack>
+            }>
               <Button variant="outlined" color="danger" size="sm" onClick={() => setDeleteModalOpen(file)}>
                 Удалить
               </Button>

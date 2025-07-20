@@ -14,10 +14,10 @@ class AuthService {
 
   async logout(): Promise<LogoutResponse> {
     const data = await httpClient.post<LogoutResponse>('/api/users/logout');
-    
+
     // Clear cookies on logout
     httpClient.clearAuthTokens();
-    
+
     return data;
   }
 
@@ -30,8 +30,15 @@ class AuthService {
   }
 
   // Helper methods
-  isAuthenticated(): boolean {
-    return httpClient.isAuthenticated() || httpClient.get<UserResponse>('/api/users/info').then(response => response.user !== null).catch(() => false);
+  async isAuthenticated(): Promise<boolean> {
+    try {
+      const response = await httpClient.get<UserResponse>('/api/users/info');
+      return response.user !== null;
+    } catch {
+      // If the request fails, clear invalid tokens and return false
+      this.clearToken();
+      return false;
+    }
   }
 
   clearToken(): void {

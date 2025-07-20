@@ -5,12 +5,14 @@ import { Card, CardContent, Typography, Stack, Chip } from '@mui/joy';
 interface DataCardProps {
   title: string;
   chip?: string;
+  chips?: React.ReactNode;
   children?: React.ReactNode;
 }
 
 const DataCard: React.FC<DataCardProps> = ({
   title,
   chip,
+  chips,
   children
 }) => {
   return (
@@ -42,6 +44,7 @@ const DataCard: React.FC<DataCardProps> = ({
           {chip && <Chip color="primary" size="md" sx={{ alignSelf: 'flex-end' }}>{chip}</Chip>}
         </Stack>
 
+        {chips}
         <Stack direction="row" spacing={1} justifyContent="space-between" alignItems="center">
           {children}
         </Stack>

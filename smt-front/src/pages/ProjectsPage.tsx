@@ -9,9 +9,12 @@ import { CircularLoader } from '../components/CircularLoader';
 import Button from '@mui/joy/Button';
 import { DialogContent, DialogTitle, FormControl, FormLabel, Input, Modal, ModalDialog, Stack } from '@mui/joy';
 import { truncate } from '../common/TextUtils';
+import useNotification from '../notifications/hook';
+import { getErrorMessage } from '../common/OnError';
 
 const ProjectsPage = () => {
   const navigate = useNavigate();
+  const { notifySuccess, notifyError } = useNotification();
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -27,6 +30,7 @@ const ProjectsPage = () => {
       setProjects(allProjects);
     } catch (error) {
       console.error('Error loading projects:', error);
+      notifyError(getErrorMessage(error));
     } finally {
       setIsLoading(false);
     }
@@ -34,7 +38,7 @@ const ProjectsPage = () => {
 
   useEffect(() => {
     loadData();
-  }, [loadData]);
+  }, []);
 
   const handleCreateProject = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -49,8 +53,10 @@ const ProjectsPage = () => {
       });
       setCreateModalOpen(false);
       await loadData();
+      notifySuccess('Проект успешно создан');
     } catch (error) {
       console.error('Error creating project:', error);
+      notifyError(getErrorMessage(error));
     }
   };
 
@@ -59,10 +65,23 @@ const ProjectsPage = () => {
       await projectService.deleteProject(project.id);
       setDeleteModalOpen(null);
       await loadData();
+      notifySuccess('Проект успешно удален');
     } catch (error) {
       console.error('Error deleting project:', error);
+      notifyError(getErrorMessage(error));
     }
   };
+
+  const renderCard = useCallback((project: Project) => (
+    <DataCard title={truncate(project.title)} >
+      <Button variant="outlined" color="danger" size="sm" onClick={() => setDeleteModalOpen(project)}>
+        Удалить
+      </Button>
+      <Button variant="outlined" color="neutral" size="sm" onClick={() => navigate(`/projects/${project.id}/subprojects`)}>
+        Открыть
+      </Button>
+    </DataCard>
+  ), [navigate]);
 
   const deleteModal = (
     <Modal open={deleteModalOpen !== null} onClose={() => setDeleteModalOpen(null)}>
@@ -113,16 +132,7 @@ const ProjectsPage = () => {
         <DataGrid<Project>
           title="Проекты"
           items={projects}
-          renderCard={(project) => (
-            <DataCard title={truncate(project.title)} >
-              <Button variant="outlined" color="danger" size="sm" onClick={() => setDeleteModalOpen(project)}>
-                Удалить
-              </Button>
-              <Button variant="outlined" color="neutral" size="sm" onClick={() => navigate(`/projects/${project.id}/subprojects`)}>
-                Открыть
-              </Button>
-            </DataCard>
-          )}
+          renderCard={renderCard}
           onCreateItem={() => setCreateModalOpen(true)}
           emptyStateTitle="Нет проектов"
           emptyStateDescription="Создайте свой первый проект для начала"
