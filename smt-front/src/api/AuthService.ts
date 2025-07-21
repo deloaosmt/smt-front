@@ -48,15 +48,6 @@ class AuthService {
     httpClient.clearAuthTokens();
   }
 
-  // Get the current access token from cookie
-  getAccessToken(): string | null {
-    return httpClient.getAccessToken();
-  }
-
-  // Get the current refresh token from cookie
-  getRefreshToken(): string | null {
-    return httpClient.getRefreshToken();
-  }
 }
 
 // Export singleton instance

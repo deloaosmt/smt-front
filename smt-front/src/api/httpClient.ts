@@ -172,28 +172,11 @@ class HttpClient {
     }).then(response => response.data);
   }
 
-  // Authentication helper methods
-  isAuthenticated(): boolean {
-    return getCookie('access_token_cookie') !== null;
-  }
-
   clearAuthTokens(): void {
     deleteCookie('access_token_cookie');
     deleteCookie('refresh_token_cookie');
   }
 
-  getAccessToken(): string | null {
-    return getCookie('access_token_cookie');
-  }
-
-  getRefreshToken(): string | null {
-    return getCookie('refresh_token_cookie');
-  }
-
-  // Get the underlying axios instance for advanced usage
-  getAxiosInstance(): AxiosInstance {
-    return this.axiosInstance;
-  }
 }
 
 // Export singleton instance
