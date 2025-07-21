@@ -18,8 +18,6 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         const checkAuth = async () => {
             try {
-                // For HTTP-only cookies, we can't check them directly in JavaScript
-                // Instead, we rely on the backend to validate the session
                 const isAuth = await authService.isAuthenticated();
                 
                 if (isMounted) {
@@ -50,7 +48,6 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
                 }
             } finally {
                 if (isMounted) {
-                    console.log('🔍 AuthProvider: Authentication check completed. isAuthenticated:', isAuthenticated);
                     setIsLoading(false);
                 }
             }
@@ -65,17 +62,14 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
     }, []);
 
     const setAuth = (auth: boolean, userData?: User | null) => {
-        console.log('🔍 AuthProvider: setAuth called with:', { auth, userData });
         setIsAuthenticated(auth);
         setUser(userData || null);
     };
 
     const logout = async () => {
-        console.log('🔍 AuthProvider: Logout called');
         try {
             await authService.logout();
         } catch (error) {
-            console.error('❌ AuthProvider: Logout error:', error);
             notifyError(getErrorMessage(error));
         } finally {
             setAuth(false, null);

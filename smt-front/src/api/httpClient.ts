@@ -23,6 +23,8 @@ class HttpClient {
     resolve: (value: unknown) => void;
     reject: (error: unknown) => void;
   }> = [];
+  private refreshAttempts = 0;
+  private readonly MAX_REFRESH_ATTEMPTS = 1;
 
   constructor(baseURL: string = API_URL) {
     this.axiosInstance = axios.create({
@@ -47,16 +49,18 @@ class HttpClient {
       }
     );
 
-    // Response interceptor for error handling and token refresh
     this.axiosInstance.interceptors.response.use(
       (response) => response,
       async (error) => {
         const originalRequest = error.config;
 
-        // Don't retry if this is already a retry attempt or if it's a login/register request
-        if (error.response?.status === 401 && !originalRequest._retry && 
+        // Only attempt refresh for 401 errors on non-auth endpoints
+        if (error.response?.status === 401 && 
+            !originalRequest._retry && 
             !originalRequest.url?.includes('/login') && 
-            !originalRequest.url?.includes('/register')) {
+            !originalRequest.url?.includes('/register') &&
+            !originalRequest.url?.includes('/refresh') &&
+            this.refreshAttempts < this.MAX_REFRESH_ATTEMPTS) {
           
           if (this.isRefreshing) {
             // If already refreshing, queue this request
@@ -71,9 +75,13 @@ class HttpClient {
 
           originalRequest._retry = true;
           this.isRefreshing = true;
+          this.refreshAttempts++;
 
           try {
             await authService.refreshToken();
+            
+            // Reset refresh attempts on successful refresh
+            this.refreshAttempts = 0;
             
             this.failedQueue.forEach(({ resolve }) => {
               resolve(null);
@@ -82,17 +90,17 @@ class HttpClient {
 
             return this.axiosInstance.request(originalRequest);
           } catch (refreshError) {
+            // Clear all auth tokens and reset state
             this.clearAuthTokens();
+            this.refreshAttempts = 0;
             
             this.failedQueue.forEach(({ reject }) => {
               reject(refreshError);
             });
             this.failedQueue = [];
 
-            // Don't redirect if we're already on the login page
-            if (!window.location.pathname.includes('/login')) {
-              window.location.href = '/login';
-            }
+            // Force redirect to login page
+            this.redirectToLogin();
             
             return Promise.reject(refreshError);
           } finally {
@@ -109,6 +117,15 @@ class HttpClient {
         return Promise.reject(error);
       }
     );
+  }
+
+  private redirectToLogin(): void {
+    // Only redirect if not already on login page and not in a redirect loop
+    const currentPath = window.location.pathname;
+    if (!currentPath.includes('/login') && !currentPath.includes('/register')) {
+      // Use window.location.replace to prevent back button issues
+      window.location.replace('/login');
+    }
   }
 
   // Generic request method
@@ -175,6 +192,13 @@ class HttpClient {
   clearAuthTokens(): void {
     deleteCookie('access_token_cookie');
     deleteCookie('refresh_token_cookie');
+    deleteCookie('csrf_access_token');
+    deleteCookie('csrf_refresh_token');
+  }
+
+  // Reset refresh attempts (useful for testing or manual auth state changes)
+  resetRefreshAttempts(): void {
+    this.refreshAttempts = 0;
   }
 
 }

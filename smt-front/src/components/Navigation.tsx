@@ -1,6 +1,7 @@
 import { Box, Button, Avatar, Typography } from '@mui/joy';
 import { useNavigate, useLocation } from 'react-router';
 import useAuth from '../auth/AuthHook';
+import { getNavigationRoutes } from '../config/routes';
 
 const Navigation = () => {
   const navigate = useNavigate();
@@ -16,17 +17,7 @@ const Navigation = () => {
     return location.pathname === path;
   };
 
-  const fileRoute = '/files';
-  const projectRoute = '/projects';
-  const subprojectRoute = '/subprojects';
-  const revisionRoute = '/revisions';
-
-  const routes = [
-    { path: projectRoute, label: 'Проекты' },
-    { path: subprojectRoute, label: 'Подпроекты' },
-    { path: revisionRoute, label: 'Изменения' },
-    { path: fileRoute, label: 'Файлы' },
-  ];
+  const routes = getNavigationRoutes();
 
   // Get user initials for avatar
   const getUserInitials = () => {
