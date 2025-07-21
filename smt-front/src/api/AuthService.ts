@@ -32,10 +32,13 @@ class AuthService {
   // Helper methods
   async isAuthenticated(): Promise<boolean> {
     try {
+      // For HTTP-only cookies, we need to make an API call to validate the session
+      // The backend will check the cookies and return user info if valid
       const response = await httpClient.get<UserResponse>('/api/users/info');
-      return response.user !== null;
-    } catch {
-      // If the request fails, clear invalid tokens and return false
+      return response.user !== null && response.user !== undefined;
+    } catch (error) {
+      // If the request fails (401, 403, etc.), the session is invalid
+      console.log('🔍 AuthService: Authentication check failed:', error);
       this.clearToken();
       return false;
     }

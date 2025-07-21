@@ -18,18 +18,10 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         const checkAuth = async () => {
             try {
-                const hasCookies = authService.getAccessToken() !== null;
-                
-                if (!hasCookies) {
-                    if (isMounted) {
-                        setIsAuthenticated(false);
-                        setUser(null);
-                        setIsLoading(false);
-                    }
-                    return;
-                }
-                
+                // For HTTP-only cookies, we can't check them directly in JavaScript
+                // Instead, we rely on the backend to validate the session
                 const isAuth = await authService.isAuthenticated();
+                
                 if (isMounted) {
                     if (isAuth) {
                         try {
