@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router';
-import Navigation from '../components/Navigation';
 import DataGrid from '../components/DataGrid';
 import DataCard from '../components/DataCard';
 import type { Revision } from '../types/revision';
@@ -12,6 +11,7 @@ import Button from '@mui/joy/Button';
 import { DialogContent, DialogTitle, FormControl, FormLabel, Input, Modal, ModalDialog, Stack, Select, Option } from '@mui/joy';
 import useNotification from '../notifications/hook';
 import { getErrorMessage } from '../common/OnError';
+import SinglePage from '../components/SinglePage';
 
 const RevisionsPage = () => {
   const { subprojectId } = useParams<{ subprojectId?: string }>();
@@ -202,8 +202,7 @@ const RevisionsPage = () => {
   };
 
   return (
-    <>
-      <Navigation />
+    <SinglePage>
       {isLoading && <CircularLoader />}
       {!isLoading &&
         <DataGrid<Revision>
@@ -234,7 +233,7 @@ const RevisionsPage = () => {
       }
       {createModal}
       {deleteModal}
-    </>
+    </SinglePage>
   );
 };
 

@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import Navigation from '../components/Navigation';
 import DataGrid from '../components/DataGrid';
 import DataCard from '../components/DataCard';
 import type { Subproject } from '../types/subpoject';
@@ -11,6 +10,7 @@ import { CircularLoader } from '../components/CircularLoader';
 import { Button, DialogContent, DialogTitle, FormControl, FormLabel, Input, Modal, ModalDialog, Option, Select, Stack } from '@mui/joy';
 import useNotification from '../notifications/hook';
 import { getErrorMessage } from '../common/OnError';
+import SinglePage from '../components/SinglePage';
 
 const SubprojectsPage = () => {
   const navigate = useNavigate();
@@ -250,8 +250,7 @@ const SubprojectsPage = () => {
   );
 
   return (
-    <>
-      <Navigation />
+    <SinglePage>
       {isLoading && <CircularLoader />}
       {!isLoading &&
         <DataGrid<Subproject>
@@ -285,7 +284,7 @@ const SubprojectsPage = () => {
       {deleteModal}
       {createModal}
       {analysisModal}
-    </>
+    </SinglePage>
   );
 };
 

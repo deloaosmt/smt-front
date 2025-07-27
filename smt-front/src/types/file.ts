@@ -12,7 +12,9 @@ export interface File {
   revision_id?: number | null;
   revision_name?: string | null;
   project_id?: number | null;
+  project_name?: string | null;
   subproject_id?: number | null;
+  subproject_name?: string | null;
 }
 
 export interface FileType {
@@ -58,4 +60,17 @@ export interface GenerateInfo {
 export interface TopSideInfo {
   left: UploadInfo;
   right: GenerateInfo;
-} 
+}
+
+export interface FileFilterParams {
+  document_type: string | null;
+  project_id: number | null;
+  subproject_id: number | null;
+  revision_id: number | null;
+  filter: FileListType | null;
+}
+
+export enum FileListType {
+  Base = 'base',
+  Diff = 'diff'
+}

@@ -5,10 +5,10 @@ import type { ComponentType } from 'react';
 const LoginPage = lazy(() => import('../pages/LoginPage'));
 const RegisterPage = lazy(() => import('../pages/RegisterPage'));
 const ProjectsPage = lazy(() => import('../pages/ProjectsPage'));
-const FilesPage = lazy(() => import('../pages/FilesPage'));
+const FilesPage = lazy(() => import('../pages/files/FilesPage'));
 const SubprojectsPage = lazy(() => import('../pages/SubprojectsPage'));
 const RevisionsPage = lazy(() => import('../pages/RevisionsPage'));
-const AnalysisPage = lazy(() => import('../pages/AnalysisPage'));
+const FileAnalysisPage = lazy(() => import('../pages/analysis/FileAnalysisPage'));
 
 export interface RouteConfig {
   path: string;
@@ -82,7 +82,7 @@ export const routes: RouteConfig[] = [
   {
     path: '/analysis',
     label: 'Анализ',
-    element: AnalysisPage,
+    element: FileAnalysisPage,
     isProtected: true,
     showInNavigation: true,
   },

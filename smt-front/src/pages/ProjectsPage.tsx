@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router';
-import Navigation from '../components/Navigation';
 import DataGrid from '../components/DataGrid';
 import DataCard from '../components/DataCard';
 import type { Project } from '../types/project';
@@ -11,6 +10,7 @@ import { DialogContent, DialogTitle, FormControl, FormLabel, Input, Modal, Modal
 import { truncate } from '../common/TextUtils';
 import useNotification from '../notifications/hook';
 import { getErrorMessage } from '../common/OnError';
+import SinglePage from '../components/SinglePage';
 
 const ProjectsPage = () => {
   const navigate = useNavigate();
@@ -125,8 +125,7 @@ const ProjectsPage = () => {
   );
 
   return (
-    <>
-      <Navigation />
+    <SinglePage>
       {isLoading && <CircularLoader />}
       {!isLoading &&
         <DataGrid<Project>
@@ -140,7 +139,7 @@ const ProjectsPage = () => {
       }
       {createModal}
       {deleteModal}
-    </>
+    </SinglePage>
   );
 };
 

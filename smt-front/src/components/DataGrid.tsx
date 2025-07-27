@@ -165,9 +165,10 @@ const DataGrid = <T extends { id: string | number }>({
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', backgroundColor: 'background.body' }}>
+    <Box sx={{ backgroundColor: 'background.body', display: 'flex', justifyContent: 'center', width: '100%', flexGrow: 0 }}>
       {/* Main content with left margin to account for sidebar */}
-      <Box sx={{ ml: '280px', p: 2, width: '75%', justifyContent: 'center' }}>
+
+      <Box>
 
         {/* Header */}
         <Box sx={{ mb: 4, width: '100%' }}>

@@ -40,17 +40,13 @@ const Navigation = () => {
   return (
     <Box
       sx={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        bottom: 0,
         width: '280px',
         backgroundColor: 'background.surface',
         borderRight: '1px solid',
         borderColor: 'divider',
         display: 'flex',
         flexDirection: 'column',
-        zIndex: 1000,
+        minHeight: '100vh',
       }}
     >
       {/* Header/Brand */}

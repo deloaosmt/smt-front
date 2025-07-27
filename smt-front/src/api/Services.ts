@@ -1,7 +1,7 @@
 import type { Project, ProjectCreate, ProjectUpdate, ProjectResponse, ProjectListResponse } from "../types/project"
 import type { Revision, RevisionCreate, RevisionUpdate, RevisionResponse, RevisionListResponse } from "../types/revision"
 import type { Subproject, SubprojectCreate, SubprojectUpdate, SubprojectResponse, SubprojectListResponse } from "../types/subpoject"
-import type { File, FileUpload, FileResponse, FileListResponse, DownloadUrlResponse, FileType } from "../types/file"
+import type { File, FileUpload, FileResponse, FileListResponse, DownloadUrlResponse, FileType, FileFilterParams } from "../types/file"
 import { HttpClient } from "./httpClient";
 
 const httpClient = new HttpClient();
@@ -106,8 +106,19 @@ class RevisionService {
 // File Service - matches OpenAPI specification
 class FileService {
   // GET /api/files - list files with optional filters
-  async getFiles(offset: number = 0, limit: number = 1000): Promise<File[]> {
-    const data: FileListResponse = await httpClient.get<FileListResponse>(`/api/files?offset=${offset}&limit=${limit}`);
+  async getFiles(params?: FileFilterParams): Promise<File[]> {
+    const searchParams = new URLSearchParams();
+
+    if (params?.revision_id) searchParams.append('revision_id', params.revision_id.toString());
+    if (params?.project_id) searchParams.append('project_id', params.project_id.toString());
+    if (params?.subproject_id) searchParams.append('subproject_id', params.subproject_id.toString());
+    if (params?.document_type) searchParams.append('document_type', params.document_type);
+    if (params?.filter) searchParams.append('filter', params.filter);
+
+    const queryString = searchParams.toString();
+    const url = `/api/files${queryString ? `?${queryString}` : ''}`;
+
+    const data: FileListResponse = await httpClient.get<FileListResponse>(url);
     return data.files;
   }
 
@@ -143,8 +154,14 @@ class FileService {
   }
 
   // GET /api/document-types - get list of available document types
-  async getDocumentTypes(): Promise<FileType[]> {
-    const data: { document_types: FileType[] } = await httpClient.get<{ document_types: FileType[] }>('/api/document-types');
+  async getDocumentTypes(showDiff: boolean): Promise<FileType[]> {
+    const queryParams = new URLSearchParams();
+    queryParams.append('upload', showDiff ? 'false' : 'true');
+
+    const queryString = queryParams.toString();
+    const url = `/api/document-types${queryString ? `?${queryString}` : ''}`;
+
+    const data: { document_types: FileType[] } = await httpClient.get<{ document_types: FileType[] }>(url);
     return data.document_types;
   }
 }
