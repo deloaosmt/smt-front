@@ -115,4 +115,73 @@ const Pagination: React.FC<PaginationProps> = ({
   );
 };
 
+// Simple Next/Prev pagination for server-side pagination without total count
+interface NextPrevPaginationProps {
+  currentPage: number;
+  onNextPage: () => void;
+  onPrevPage: () => void;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+  itemsPerPage: number;
+  currentItemsCount: number;
+}
+
+export const NextPrevPagination: React.FC<NextPrevPaginationProps> = ({
+  currentPage,
+  onNextPage,
+  onPrevPage,
+  hasNextPage,
+  hasPrevPage,
+  itemsPerPage,
+  currentItemsCount,
+}) => {
+  const startItem = (currentPage - 1) * itemsPerPage + 1;
+  const endItem = (currentPage - 1) * itemsPerPage + currentItemsCount;
+
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        mt: 6,
+        px: 2,
+      }}
+    >
+      {/* Items info */}
+      <Typography level="body-sm" sx={{ color: 'text.secondary' }}>
+        Показано {startItem}-{endItem} файлов (страница {currentPage})
+      </Typography>
+
+      {/* Pagination controls */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        {/* Previous button */}
+        <Button
+          variant="outlined"
+          size="sm"
+          disabled={!hasPrevPage}
+          onClick={onPrevPage}
+        >
+          Назад
+        </Button>
+
+        {/* Page indicator */}
+        <Typography level="body-sm" sx={{ px: 2, color: 'text.primary' }}>
+          Страница {currentPage}
+        </Typography>
+
+        {/* Next button */}
+        <Button
+          variant="outlined"
+          size="sm"
+          disabled={!hasNextPage}
+          onClick={onNextPage}
+        >
+          Вперед
+        </Button>
+      </Box>
+    </Box>
+  );
+};
+
 export default Pagination; 

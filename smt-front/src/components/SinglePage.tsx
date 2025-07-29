@@ -7,7 +7,8 @@ const SinglePage = ({ children }: { children: React.ReactNode }) => {
       backgroundColor: 'background.body', 
       display: 'flex', 
       minHeight: '100vh',
-      width: '100%'
+      width: '100%',
+      padding: '2rem'
     }}>
       <Navigation />
       <Container maxWidth="xl">

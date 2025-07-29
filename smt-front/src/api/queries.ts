@@ -21,7 +21,9 @@ export function useFilesQuery(filters: FileFilterParams = {
   project_id: null,
   subproject_id: null,
   revision_id: null,
-  filter: null
+  filter: null,
+  offset: undefined,
+  limit: undefined
 }) {
   return useQuery({
     queryKey: [...queryKeys.files, filters],

@@ -6,6 +6,11 @@ export const createModalOpenAtom = atom<boolean>(false);
 export const deleteModalOpenAtom = atom<File | null>(null);
 export const selectedFileAtom = atom<globalThis.File | null>(null);
 
+// Pagination state
+export const currentPageAtom = atom<number>(1);
+export const itemsPerPageAtom = atom<number>(10);
+export const totalItemsAtom = atom<number>(0);
+
 // Filter state for UI (for main table filtering)
 export interface FilterState {
   documentType: string | null;
@@ -20,6 +25,14 @@ export const filterStateAtom = atom<FilterState>({
   subprojectId: null,
   revisionId: null
 });
+
+// Reset current page when filters change
+export const resetPageAtom = atom(
+  null,
+  (_, set) => {
+    set(currentPageAtom, 1);
+  }
+);
 
 // Create modal state (independent from filters)
 export interface CreateModalState {

@@ -114,6 +114,8 @@ class FileService {
     if (params?.subproject_id) searchParams.append('subproject_id', params.subproject_id.toString());
     if (params?.document_type) searchParams.append('document_type', params.document_type);
     if (params?.filter) searchParams.append('filter', params.filter);
+    if (params?.offset !== undefined) searchParams.append('offset', params.offset.toString());
+    if (params?.limit !== undefined) searchParams.append('limit', params.limit.toString());
 
     const queryString = searchParams.toString();
     const url = `/api/files${queryString ? `?${queryString}` : ''}`;
@@ -156,7 +158,7 @@ class FileService {
   // GET /api/document-types - get list of available document types
   async getDocumentTypes(showDiff: boolean): Promise<FileType[]> {
     const queryParams = new URLSearchParams();
-    queryParams.append('upload', showDiff ? 'false' : 'true');
+    queryParams.append('filter', showDiff ? 'diff' : 'base');
 
     const queryString = queryParams.toString();
     const url = `/api/document-types${queryString ? `?${queryString}` : ''}`;

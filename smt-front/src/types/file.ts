@@ -68,6 +68,8 @@ export interface FileFilterParams {
   subproject_id: number | null;
   revision_id: number | null;
   filter: FileListType | null;
+  offset?: number;
+  limit?: number;
 }
 
 export enum FileListType {

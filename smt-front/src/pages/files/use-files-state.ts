@@ -1,5 +1,5 @@
 import { useAtom, useSetAtom } from 'jotai';
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import {
   createModalOpenAtom,
   deleteModalOpenAtom,
@@ -7,6 +7,9 @@ import {
   filterStateAtom,
   createModalStateAtom,
   resetModalStateAtom,
+  currentPageAtom,
+  itemsPerPageAtom,
+  resetPageAtom,
   type FilterState,
   type CreateModalState
 } from './files-ui-state';
@@ -31,7 +34,10 @@ export function useFilesState() {
   const [selectedFile, setSelectedFile] = useAtom(selectedFileAtom);
   const [filterState, setFilterState] = useAtom(filterStateAtom);
   const [createModalState, setCreateModalState] = useAtom(createModalStateAtom);
+  const [currentPage, setCurrentPage] = useAtom(currentPageAtom);
+  const [itemsPerPage] = useAtom(itemsPerPageAtom);
   const resetModalStateAction = useSetAtom(resetModalStateAtom);
+  const resetPageAction = useSetAtom(resetPageAtom);
 
   // Convert UI filter state to API filter params (for main table)
   const apiFilters: FileFilterParams = {
@@ -40,6 +46,8 @@ export function useFilesState() {
     subproject_id: filterState.subprojectId ? parseInt(filterState.subprojectId) : null,
     revision_id: filterState.revisionId ? parseInt(filterState.revisionId) : null,
     filter: null,
+    offset: (currentPage - 1) * itemsPerPage,
+    limit: itemsPerPage,
   };
 
   // React Query hooks for main table
@@ -86,6 +94,28 @@ export function useFilesState() {
   const createFileMutation = useCreateFileMutation();
   const deleteFileMutation = useDeleteFileMutation();
   const downloadFileMutation = useDownloadFileMutation();
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    resetPageAction();
+  }, [filterState.documentType, filterState.projectId, filterState.subprojectId, filterState.revisionId, resetPageAction]);
+
+  // Pagination handlers
+  const handleNextPage = useCallback(() => {
+    if (files.length === itemsPerPage) { // Only allow next if we got a full page
+      setCurrentPage(prev => prev + 1);
+    }
+  }, [files.length, itemsPerPage, setCurrentPage]);
+
+  const handlePrevPage = useCallback(() => {
+    if (currentPage > 1) {
+      setCurrentPage(prev => prev - 1);
+    }
+  }, [currentPage, setCurrentPage]);
+
+  const handleGoToPage = useCallback((page: number) => {
+    setCurrentPage(page);
+  }, [setCurrentPage]);
 
   // Handle file creation with direct data (for modal)
   const handleCreateFileWithData = useCallback(async (fileData: {
@@ -135,6 +165,10 @@ export function useFilesState() {
   const isModalLoading = isProjectsLoading || isModalSubprojectsLoading || 
                         isModalRevisionsLoading || isDocumentTypesLoading;
 
+  // Pagination state
+  const hasNextPage = files.length === itemsPerPage;
+  const hasPrevPage = currentPage > 1;
+
   return {
     // State
     files,
@@ -152,11 +186,22 @@ export function useFilesState() {
     modalRevisions,
     documentTypes,
 
+    // Pagination state
+    currentPage,
+    itemsPerPage,
+    hasNextPage,
+    hasPrevPage,
+
     // Actions
     setCreateModalOpen,
     setDeleteModalOpen,
     setSelectedFile,
     resetModalState: resetModalStateAction,
+
+    // Pagination actions
+    handleNextPage,
+    handlePrevPage,
+    handleGoToPage,
 
     // Handlers
     handleCreateFileWithData,
